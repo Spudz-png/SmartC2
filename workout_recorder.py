@@ -14,6 +14,9 @@ class Stroke:
     elapsed_time:     float = 0.0
     distance:         float = 0.0
     hr:               int   = 0
+    watts:            int   = 0
+    split:            int   = 0    # seconds per 500m
+    rate:             float = 0.0  # spm
 
 
 class WorkoutRecorder:
@@ -93,6 +96,9 @@ class WorkoutRecorder:
             elapsed_time     = self._last_stroke.get("elapsed_time", 0.0),
             distance         = self._last_stroke.get("distance", 0.0),
             hr               = self._last_hr,
+            watts            = self._last_stroke.get("watts", 0),
+            split            = self._last_stroke.get("split", 0),
+            rate             = self.stroke_rate,
         )
         self.strokes.append(stroke)
         return stroke

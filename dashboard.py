@@ -10,17 +10,30 @@ from pathlib import Path
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 from pm5_ble import PM5BLE
 from workout_recorder import WorkoutRecorder
 from metrics import compute
+from training_load import workout_tss, compute_history
 
 # ─────────────────────────── paths
-BASE   = Path(__file__).parent
-STATIC = BASE / "static"
-DATA   = BASE / "data" / "workouts"
+BASE     = Path(__file__).parent
+STATIC   = BASE / "static"
+DATA     = BASE / "data" / "workouts"
+SETTINGS = BASE / "data" / "settings.json"
 STATIC.mkdir(exist_ok=True)
 DATA.mkdir(parents=True, exist_ok=True)
+
+DEFAULT_SETTINGS = {"ftp": 0, "threshold_hr": 175, "rest_hr": 55}
+
+def load_settings() -> dict:
+    if SETTINGS.exists():
+        return {**DEFAULT_SETTINGS, **json.loads(SETTINGS.read_text())}
+    return DEFAULT_SETTINGS.copy()
+
+def save_settings(s: dict) -> None:
+    SETTINGS.write_text(json.dumps(s, indent=2))
 
 # ─────────────────────────── app
 app = FastAPI()
@@ -54,6 +67,8 @@ def _on_force(seq: int, values: list[float]) -> None:
                 "hr":      stroke.hr,
                 "rate":    recorder.stroke_rate,
                 "elapsed": round(recorder.duration),
+                "watts":   stroke.watts,
+                "split":   stroke.split,
             },
         }))
 
@@ -69,18 +84,24 @@ def _on_hr(hr: int) -> None:
 async def index():
     return FileResponse(STATIC / "index.html")
 
+# ── Workouts
 @app.get("/api/workouts")
 async def list_workouts():
-    files = sorted(DATA.glob("*.json"), reverse=True)
-    result = []
-    for f in files[:20]:
+    settings = load_settings()
+    files    = sorted(DATA.glob("*.json"), reverse=True)
+    result   = []
+    for f in files[:50]:
         try:
-            d = json.loads(f.read_text())
+            d   = json.loads(f.read_text())
+            m   = d.get("metrics", {})
+            tss, method = workout_tss(m, settings)
             result.append({
                 "id":           f.stem,
                 "date":         d.get("date", ""),
-                "stroke_count": d.get("metrics", {}).get("stroke_count", 0),
-                "duration":     d.get("metrics", {}).get("duration", 0),
+                "stroke_count": m.get("stroke_count", 0),
+                "duration":     m.get("duration", 0),
+                "tss":          tss,
+                "tss_method":   method,
             })
         except Exception:
             pass
@@ -93,12 +114,42 @@ async def get_workout(wid: str):
         return JSONResponse({"error": "not found"}, status_code=404)
     return JSONResponse(json.loads(path.read_text()))
 
+# ── Settings
+@app.get("/api/settings")
+async def get_settings():
+    return JSONResponse(load_settings())
+
+class Settings(BaseModel):
+    ftp:          int = 0
+    threshold_hr: int = 175
+    rest_hr:      int = 55
+
+@app.post("/api/settings")
+async def post_settings(s: Settings):
+    data = {"ftp": s.ftp, "threshold_hr": s.threshold_hr, "rest_hr": s.rest_hr}
+    save_settings(data)
+    return JSONResponse({"ok": True})
+
+# ── Training load history
+@app.get("/api/training-load")
+async def training_load():
+    settings = load_settings()
+    files    = sorted(DATA.glob("*.json"))
+    workouts = []
+    for f in files:
+        try:
+            d = json.loads(f.read_text())
+            workouts.append({"date": d.get("date", ""), "metrics": d.get("metrics", {})})
+        except Exception:
+            pass
+    history = compute_history(workouts, settings)
+    return JSONResponse(history)
+
 # ─────────────────────────── WebSocket
 @app.websocket("/ws")
 async def ws_endpoint(ws: WebSocket):
     await ws.accept()
     _clients.add(ws)
-    # send current connection state on join
     await ws.send_text(json.dumps({
         "event": "status",
         "data":  {"connected": pm5.is_connected},
@@ -133,27 +184,34 @@ async def _handle(msg: dict, ws: WebSocket) -> None:
 
     elif action == "stop":
         recorder.stop()
-        m = compute(recorder)
+        m        = compute(recorder)
+        settings = load_settings()
+        tss, tss_method = workout_tss(m, settings)
         wid  = datetime.now().strftime("%Y%m%d_%H%M%S")
         data = {
-            "id":      wid,
-            "date":    datetime.now().isoformat(),
-            "metrics": m,
+            "id":         wid,
+            "date":       datetime.now().isoformat(),
+            "tss":        tss,
+            "tss_method": tss_method,
+            "metrics":    m,
             "strokes": [
                 {
-                    "index":         s.index,
-                    "force_curve":   s.force_curve,
-                    "peak_force":    s.peak_force,
-                    "time_to_peak":  s.time_to_peak_pct,
-                    "elapsed_time":  s.elapsed_time,
-                    "distance":      s.distance,
-                    "hr":            s.hr,
+                    "index":        s.index,
+                    "force_curve":  s.force_curve,
+                    "peak_force":   s.peak_force,
+                    "time_to_peak": s.time_to_peak_pct,
+                    "elapsed_time": s.elapsed_time,
+                    "distance":     s.distance,
+                    "hr":           s.hr,
+                    "watts":        s.watts,
+                    "split":        s.split,
                 }
                 for s in recorder.strokes
             ],
         }
         (DATA / f"{wid}.json").write_text(json.dumps(data, indent=2))
-        await broadcast({"event": "results", "data": m, "workout_id": wid})
+        await broadcast({"event": "results", "data": m, "tss": tss,
+                         "tss_method": tss_method, "workout_id": wid})
 
 # ─────────────────────────── entry point
 if __name__ == "__main__":

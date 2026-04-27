@@ -81,11 +81,17 @@ class PM5BLE:
     def _handle_stroke(self, _, data: bytearray) -> None:
         if len(data) < 20 or self._on_stroke is None:
             return
+        # bytes 8-9: split in seconds per 500m (uint16 LE)
+        # bytes 10-11: watts (uint16 LE)
+        split = int.from_bytes(data[8:10], "little")
+        watts = int.from_bytes(data[10:12], "little")
         self._on_stroke({
             "elapsed_time": int.from_bytes(data[0:3], "little") * 0.01,
             "distance":     int.from_bytes(data[3:6], "little") * 0.1,
             "drive_length": data[6] * 0.01,
             "stroke_count": int.from_bytes(data[18:20], "little"),
+            "split":        split,
+            "watts":        watts,
         })
 
     def _handle_hr(self, _, data: bytearray) -> None:

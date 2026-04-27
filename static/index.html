@@ -6,10 +6,6 @@
   <title>C2 Force Curve</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
-  <style>
-    body { -webkit-tap-highlight-color: transparent; }
-    .metric-card { @apply bg-gray-800 rounded-2xl p-4 text-center; }
-  </style>
 </head>
 <body class="bg-gray-950 text-white min-h-screen font-sans select-none">
 
@@ -21,15 +17,16 @@
 
   <!-- Tab bar -->
   <nav class="bg-gray-900 border-b border-gray-800 flex sticky top-12 z-10">
-    <button onclick="showTab('live')"     id="tab-live"     class="flex-1 py-2.5 text-sm font-semibold tab-btn active-tab">Live</button>
-    <button onclick="showTab('analysis')" id="tab-analysis" class="flex-1 py-2.5 text-sm font-semibold tab-btn">Analysis</button>
-    <button onclick="showTab('history')"  id="tab-history"  class="flex-1 py-2.5 text-sm font-semibold tab-btn">History</button>
+    <button onclick="showTab('live')"     id="tab-live"     class="flex-1 py-2.5 text-xs font-semibold tab-btn">Live</button>
+    <button onclick="showTab('analysis')" id="tab-analysis" class="flex-1 py-2.5 text-xs font-semibold tab-btn">Analysis</button>
+    <button onclick="showTab('training')" id="tab-training" class="flex-1 py-2.5 text-xs font-semibold tab-btn">Training</button>
+    <button onclick="showTab('history')"  id="tab-history"  class="flex-1 py-2.5 text-xs font-semibold tab-btn">History</button>
   </nav>
 
-  <!-- ═══════════════════════════════ LIVE TAB -->
+  <!-- ═══════════════════ LIVE TAB -->
   <div id="page-live" class="p-4 space-y-4 pb-8">
 
-    <!-- Connection panel -->
+    <!-- Connection -->
     <div id="panel-connect" class="bg-gray-900 rounded-2xl p-4 space-y-3">
       <p class="text-xs text-gray-400 font-medium uppercase tracking-wider">PM5 Connection</p>
       <button onclick="scan()" id="btn-scan"
@@ -38,56 +35,68 @@
       </button>
       <div id="device-list" class="hidden space-y-2"></div>
       <button onclick="disconnect()" id="btn-disconnect"
-        class="hidden w-full py-2 rounded-xl bg-gray-700 active:bg-gray-600 text-sm text-gray-300">
-        Disconnect
-      </button>
+        class="hidden w-full py-2 rounded-xl bg-gray-700 text-sm text-gray-300">Disconnect</button>
     </div>
 
     <!-- Workout controls -->
     <div id="panel-workout" class="hidden flex gap-3">
       <button onclick="startWorkout()" id="btn-start"
-        class="flex-1 py-4 rounded-2xl bg-green-600 active:bg-green-700 font-bold text-lg transition">
-        Start
-      </button>
+        class="flex-1 py-4 rounded-2xl bg-green-600 active:bg-green-700 font-bold text-lg">Start</button>
       <button onclick="stopWorkout()" id="btn-stop" disabled
-        class="flex-1 py-4 rounded-2xl bg-red-600 active:bg-red-700 font-bold text-lg disabled:opacity-40 transition">
-        Stop
-      </button>
+        class="flex-1 py-4 rounded-2xl bg-red-600 active:bg-red-700 font-bold text-lg disabled:opacity-40">Stop</button>
     </div>
 
-    <!-- Live metrics -->
-    <div id="panel-metrics" class="hidden grid grid-cols-3 gap-3">
-      <div class="bg-gray-800 rounded-2xl p-3 text-center">
-        <div id="m-strokes" class="text-3xl font-bold tabular-nums">0</div>
-        <div class="text-xs text-gray-400 mt-1">Strokes</div>
+    <!-- Live metrics — top row -->
+    <div id="panel-metrics" class="hidden space-y-3">
+      <div class="grid grid-cols-3 gap-3">
+        <div class="bg-gray-800 rounded-2xl p-3 text-center">
+          <div id="m-strokes" class="text-3xl font-bold tabular-nums">0</div>
+          <div class="text-xs text-gray-400 mt-1">Strokes</div>
+        </div>
+        <div class="bg-gray-800 rounded-2xl p-3 text-center">
+          <div id="m-rate" class="text-3xl font-bold tabular-nums">—</div>
+          <div class="text-xs text-gray-400 mt-1">spm</div>
+        </div>
+        <div class="bg-gray-800 rounded-2xl p-3 text-center">
+          <div id="m-elapsed" class="text-3xl font-bold tabular-nums">0:00</div>
+          <div class="text-xs text-gray-400 mt-1">Time</div>
+        </div>
       </div>
-      <div class="bg-gray-800 rounded-2xl p-3 text-center">
-        <div id="m-rate" class="text-3xl font-bold tabular-nums">—</div>
-        <div class="text-xs text-gray-400 mt-1">spm</div>
+      <!-- PM5-style big metrics row -->
+      <div class="grid grid-cols-2 gap-3">
+        <div class="bg-gray-800 rounded-2xl p-4 text-center">
+          <div id="m-watts" class="text-4xl font-bold tabular-nums">—</div>
+          <div class="text-xs text-gray-400 mt-1">Watts</div>
+        </div>
+        <div class="bg-gray-800 rounded-2xl p-4 text-center">
+          <div id="m-split" class="text-4xl font-bold tabular-nums">—</div>
+          <div class="text-xs text-gray-400 mt-1">Split /500m</div>
+        </div>
       </div>
-      <div class="bg-gray-800 rounded-2xl p-3 text-center">
-        <div id="m-hr" class="text-3xl font-bold tabular-nums">—</div>
-        <div class="text-xs text-gray-400 mt-1">bpm</div>
-      </div>
-      <div class="bg-gray-800 rounded-2xl p-3 text-center col-span-2">
-        <div id="m-peak" class="text-3xl font-bold tabular-nums">—</div>
-        <div class="text-xs text-gray-400 mt-1">Peak Force (N)</div>
-      </div>
-      <div class="bg-gray-800 rounded-2xl p-3 text-center">
-        <div id="m-elapsed" class="text-3xl font-bold tabular-nums">0:00</div>
-        <div class="text-xs text-gray-400 mt-1">Time</div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="bg-gray-800 rounded-2xl p-3 text-center">
+          <div id="m-peak" class="text-2xl font-bold tabular-nums">—</div>
+          <div class="text-xs text-gray-400 mt-1">Peak Force (N)</div>
+        </div>
+        <div class="bg-gray-800 rounded-2xl p-3 text-center">
+          <div id="m-hr" class="text-2xl font-bold tabular-nums">—</div>
+          <div class="text-xs text-gray-400 mt-1">HR (bpm)</div>
+        </div>
       </div>
     </div>
 
     <!-- Stroke log -->
     <div id="panel-log" class="hidden">
       <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">Stroke Log</p>
+      <div class="grid grid-cols-5 gap-1 text-xs text-gray-500 px-2 mb-1">
+        <span>#</span><span>Watts</span><span>Split</span><span>Peak N</span><span>spm</span>
+      </div>
       <div id="stroke-log" class="space-y-1 max-h-52 overflow-y-auto pr-1"></div>
     </div>
 
-  </div><!-- /live -->
+  </div>
 
-  <!-- ═══════════════════════════════ ANALYSIS TAB -->
+  <!-- ═══════════════════ ANALYSIS TAB -->
   <div id="page-analysis" class="hidden p-4 space-y-4 pb-8">
 
     <p id="no-results" class="text-gray-500 text-sm text-center py-12">
@@ -100,6 +109,8 @@
       <div class="bg-gray-900 rounded-2xl p-4 grid grid-cols-2 gap-4">
         <div><div class="text-xs text-gray-400">Strokes</div><div id="r-strokes" class="text-xl font-bold">—</div></div>
         <div><div class="text-xs text-gray-400">Duration</div><div id="r-duration" class="text-xl font-bold">—</div></div>
+        <div><div class="text-xs text-gray-400">Avg Watts</div><div id="r-watts" class="text-xl font-bold">—</div></div>
+        <div><div class="text-xs text-gray-400">Avg Split</div><div id="r-split" class="text-xl font-bold">—</div></div>
         <div><div class="text-xs text-gray-400">Avg Peak Force</div><div id="r-avgpeak" class="text-xl font-bold">—</div></div>
         <div><div class="text-xs text-gray-400">Consistency</div><div id="r-consistency" class="text-xl font-bold">—</div></div>
         <div><div class="text-xs text-gray-400">Avg HR</div><div id="r-hr" class="text-xl font-bold">—</div></div>
@@ -118,22 +129,142 @@
         <div id="chart-peaks" style="height:180px"></div>
       </div>
 
-      <!-- Time to peak per stroke -->
+      <!-- Watts per stroke -->
+      <div class="bg-gray-900 rounded-2xl p-4">
+        <p class="text-sm font-semibold mb-1">Watts per Stroke</p>
+        <div id="chart-watts" style="height:180px"></div>
+      </div>
+
+      <!-- Split per stroke -->
+      <div class="bg-gray-900 rounded-2xl p-4">
+        <p class="text-sm font-semibold mb-1">Split per Stroke</p>
+        <div id="chart-split" style="height:180px"></div>
+      </div>
+
+      <!-- Time to peak -->
       <div class="bg-gray-900 rounded-2xl p-4">
         <p class="text-sm font-semibold mb-1">Time to Peak (% of drive)</p>
         <div id="chart-ttp" style="height:180px"></div>
       </div>
 
-      <!-- HR trend (hidden if no HR data) -->
+      <!-- HR trend -->
       <div id="panel-hr-chart" class="hidden bg-gray-900 rounded-2xl p-4">
         <p class="text-sm font-semibold mb-1">Heart Rate</p>
         <div id="chart-hr" style="height:160px"></div>
       </div>
 
-    </div>
-  </div><!-- /analysis -->
+      <!-- ── Custom Graph Builder ── -->
+      <div class="bg-gray-900 rounded-2xl p-4 space-y-3">
+        <p class="text-sm font-semibold">Custom Graph</p>
+        <p class="text-xs text-gray-400">Pick any two metrics to plot against each other.</p>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-gray-400 block mb-1">X Axis</label>
+            <select id="custom-x" class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700"></select>
+          </div>
+          <div>
+            <label class="text-xs text-gray-400 block mb-1">Y Axis</label>
+            <select id="custom-y" class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700"></select>
+          </div>
+        </div>
+        <button onclick="plotCustom()"
+          class="w-full py-2.5 rounded-xl bg-blue-600 active:bg-blue-700 font-semibold text-sm transition">
+          Plot
+        </button>
+        <div id="chart-custom" style="height:220px" class="hidden"></div>
+      </div>
 
-  <!-- ═══════════════════════════════ HISTORY TAB -->
+    </div>
+  </div>
+
+  <!-- ═══════════════════ TRAINING TAB -->
+  <div id="page-training" class="hidden p-4 space-y-4 pb-8">
+
+    <!-- Settings card -->
+    <div class="bg-gray-900 rounded-2xl p-4 space-y-3">
+      <p class="text-sm font-semibold">Settings</p>
+      <p class="text-xs text-gray-400">Used for TSS calculation. FTP is required for power-based TSS; if left at 0 the app falls back to heart-rate TSS.</p>
+      <div class="grid grid-cols-3 gap-3">
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">FTP (W)</label>
+          <input id="s-ftp" type="number" min="0" max="500" placeholder="0"
+            class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700">
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Threshold HR</label>
+          <input id="s-thr" type="number" min="100" max="220" placeholder="175"
+            class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700">
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Resting HR</label>
+          <input id="s-rest" type="number" min="30" max="100" placeholder="55"
+            class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700">
+        </div>
+      </div>
+      <button onclick="saveSettings()"
+        class="w-full py-2.5 rounded-xl bg-blue-600 active:bg-blue-700 font-semibold text-sm transition">
+        Save Settings
+      </button>
+      <p id="settings-saved" class="hidden text-xs text-green-400 text-center">Saved — reload training data to apply.</p>
+    </div>
+
+    <!-- Current status card -->
+    <div class="bg-gray-900 rounded-2xl p-4">
+      <p class="text-sm font-semibold mb-3">Current Status</p>
+      <div class="grid grid-cols-3 gap-3 text-center">
+        <div>
+          <div id="tl-ctl" class="text-3xl font-bold text-blue-400">—</div>
+          <div class="text-xs text-gray-400 mt-1">Fitness (CTL)</div>
+        </div>
+        <div>
+          <div id="tl-atl" class="text-3xl font-bold text-orange-400">—</div>
+          <div class="text-xs text-gray-400 mt-1">Fatigue (ATL)</div>
+        </div>
+        <div>
+          <div id="tl-tsb" class="text-3xl font-bold" style="color:#a3e635">—</div>
+          <div class="text-xs text-gray-400 mt-1">Form (TSB)</div>
+        </div>
+      </div>
+      <div class="mt-3 text-center">
+        <span id="tl-form-label" class="text-xs px-3 py-1 rounded-full bg-gray-700 text-gray-300">—</span>
+      </div>
+    </div>
+
+    <!-- Explanation -->
+    <div class="bg-gray-900 rounded-2xl p-4 text-xs text-gray-400 space-y-1">
+      <p><span class="text-blue-400 font-medium">Fitness (CTL)</span> — 42-day rolling load. Higher = more base fitness.</p>
+      <p><span class="text-orange-400 font-medium">Fatigue (ATL)</span> — 7-day rolling load. Higher = more accumulated fatigue.</p>
+      <p><span class="font-medium" style="color:#a3e635">Form (TSB)</span> — Fitness minus Fatigue. Positive = fresh, negative = fatigued.</p>
+      <p class="pt-1 text-gray-500">TSS per workout = stress relative to your FTP or threshold HR. Refresh to update after changing settings.</p>
+    </div>
+
+    <!-- Load / refresh button -->
+    <button onclick="loadTrainingData()"
+      class="w-full py-3 rounded-2xl bg-gray-800 active:bg-gray-700 text-sm font-semibold">
+      Load / Refresh Training Data
+    </button>
+
+    <!-- CTL + ATL history chart -->
+    <div class="bg-gray-900 rounded-2xl p-4">
+      <p class="text-sm font-semibold mb-1">Fitness &amp; Fatigue Over Time</p>
+      <div id="chart-ctl-atl" style="height:220px"></div>
+    </div>
+
+    <!-- TSB chart -->
+    <div class="bg-gray-900 rounded-2xl p-4">
+      <p class="text-sm font-semibold mb-1">Form (TSB) Over Time</p>
+      <div id="chart-tsb" style="height:180px"></div>
+    </div>
+
+    <!-- TSS per workout chart -->
+    <div class="bg-gray-900 rounded-2xl p-4">
+      <p class="text-sm font-semibold mb-1">Stress Score per Workout</p>
+      <div id="chart-tss" style="height:180px"></div>
+    </div>
+
+  </div><!-- /training -->
+
+  <!-- ═══════════════════ HISTORY TAB -->
   <div id="page-history" class="hidden p-4 pb-8">
     <div class="flex justify-between items-center mb-3">
       <p class="text-xs text-gray-500 uppercase tracking-wider">Past Workouts</p>
@@ -142,51 +273,73 @@
     <div id="history-list" class="space-y-2"></div>
   </div>
 
-<!-- ═══════════════════════════════ SCRIPT -->
 <script>
-// ── Shared Plotly theme
+// ── Plotly theme
 const PL = {
-  paper_bgcolor: 'transparent',
-  plot_bgcolor:  'transparent',
-  font:   { color: '#9ca3af', size: 11 },
+  paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+  font: { color: '#9ca3af', size: 11 },
   margin: { t: 8, b: 40, l: 50, r: 10 },
-  xaxis:  { gridcolor: '#374151', zerolinecolor: '#4b5563' },
-  yaxis:  { gridcolor: '#374151', zerolinecolor: '#4b5563' },
+  xaxis: { gridcolor: '#374151', zerolinecolor: '#4b5563' },
+  yaxis: { gridcolor: '#374151', zerolinecolor: '#4b5563' },
 };
 const PC = { displayModeBar: false, responsive: true };
 
+// ── Available metrics for custom graph
+const METRIC_DEFS = [
+  { key: 'stroke_indices',     label: 'Stroke #',          unit: ''         },
+  { key: 'watts_per_stroke',   label: 'Watts',             unit: 'W'        },
+  { key: 'split_per_stroke',   label: 'Split',             unit: 's/500m'   },
+  { key: 'peak_forces',        label: 'Peak Force',        unit: 'N'        },
+  { key: 'stroke_rates',       label: 'Stroke Rate',       unit: 'spm'      },
+  { key: 'hr_per_stroke',      label: 'Heart Rate',        unit: 'bpm'      },
+  { key: 'time_to_peak_trend', label: 'Time to Peak',      unit: '% drive'  },
+];
+
+let currentMetrics = null;
+
 // ── Tab management
 function showTab(name) {
-  ['live', 'analysis', 'history'].forEach(t => {
+  ['live','analysis','training','history'].forEach(t => {
     document.getElementById(`page-${t}`).classList.toggle('hidden', t !== name);
     const btn = document.getElementById(`tab-${t}`);
     btn.classList.toggle('active-tab', t === name);
-    btn.classList.toggle('text-blue-400', t === name);
-    btn.classList.toggle('text-gray-500', t !== name);
   });
-  if (name === 'history') loadHistory();
+  if (name === 'history')  loadHistory();
+  if (name === 'training') initTraining();
 }
-// init tab styles
 showTab('live');
 
-// ── Status badge
-function setStatus(text, color) {
-  const el = document.getElementById('status-badge');
-  el.textContent = text;
-  el.className = `text-xs px-3 py-1 rounded-full text-white bg-${color}-600`;
-}
-
-// ── Visibility helpers
+// ── Helpers
 const show = el => el.classList.remove('hidden');
 const hide = el => el.classList.add('hidden');
 const $    = id  => document.getElementById(id);
+
+function fmtTime(s) {
+  const m = Math.floor(s / 60);
+  return `${m}:${String(Math.floor(s % 60)).padStart(2,'0')}`;
+}
+function fmtSplit(secs) {
+  if (!secs || secs === 0) return '—';
+  return fmtTime(secs);
+}
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString(undefined, { dateStyle:'medium', timeStyle:'short' });
+}
+
+// ── Status badge
+function setStatus(text, color) {
+  const el = $('status-badge');
+  el.textContent = text;
+  el.className = `text-xs px-3 py-1 rounded-full text-white bg-${color}-600`;
+}
 
 // ── WebSocket
 let ws;
 function connectWS() {
   ws = new WebSocket(`ws://${location.host}/ws`);
-  ws.onopen    = () => console.log('WS open');
-  ws.onclose   = () => { setTimeout(connectWS, 2000); setStatus('Offline', 'gray'); };
+  ws.onopen    = () => {};
+  ws.onclose   = () => { setTimeout(connectWS, 2000); setStatus('Offline','gray'); };
   ws.onerror   = () => ws.close();
   ws.onmessage = e  => handle(JSON.parse(e.data));
 }
@@ -194,73 +347,53 @@ function send(obj) {
   if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
 }
 
-// ── Actions
-function scan()       { send({ action: 'scan' }); $('btn-scan').textContent = 'Scanning…'; }
-function disconnect() { send({ action: 'disconnect' }); }
+// ── BLE actions
+function scan()       { send({action:'scan'}); $('btn-scan').textContent = 'Scanning…'; }
+function disconnect() { send({action:'disconnect'}); }
+function connectDevice(address) { send({action:'connect', address}); setStatus('Connecting…','yellow'); }
 
-function connectDevice(address) {
-  send({ action: 'connect', address });
-  setStatus('Connecting…', 'yellow');
-}
-
-let recording = false;
+// ── Workout controls
+let recording = false, _clockInterval;
 function startWorkout() {
-  send({ action: 'start' });
+  send({action:'start'});
   recording = true;
-  $('m-strokes').textContent = '0';
-  $('m-rate').textContent    = '—';
-  $('m-peak').textContent    = '—';
+  ['m-strokes','m-rate','m-watts','m-split','m-peak','m-hr'].forEach(id => $('m-'+id.split('-')[1]).textContent = id === 'm-strokes' ? '0' : '—');
   $('m-elapsed').textContent = '0:00';
-  $('m-hr').textContent      = '—';
   $('stroke-log').innerHTML  = '';
-  show($('panel-metrics'));
-  show($('panel-log'));
-  $('btn-start').disabled = true;
-  $('btn-stop').disabled  = false;
-  startClock();
-}
-
-function stopWorkout() {
-  send({ action: 'stop' });
-  recording = false;
-  stopClock();
-  $('btn-start').disabled = false;
-  $('btn-stop').disabled  = true;
-}
-
-// ── Elapsed clock
-let _clockInterval;
-let _startTs;
-function startClock() {
-  _startTs = Date.now();
+  show($('panel-metrics')); show($('panel-log'));
+  $('btn-start').disabled = true; $('btn-stop').disabled = false;
+  const t0 = Date.now();
   _clockInterval = setInterval(() => {
-    const s = Math.floor((Date.now() - _startTs) / 1000);
-    $('m-elapsed').textContent = fmtTime(s);
+    $('m-elapsed').textContent = fmtTime(Math.floor((Date.now()-t0)/1000));
   }, 1000);
 }
-function stopClock() { clearInterval(_clockInterval); }
+function stopWorkout() {
+  send({action:'stop'});
+  recording = false;
+  clearInterval(_clockInterval);
+  $('btn-start').disabled = false; $('btn-stop').disabled = true;
+}
 
 // ── Message handler
 function handle(msg) {
-  const { event, data } = msg;
+  const {event, data} = msg;
 
   if (event === 'status') {
-    if (data.connected) { setStatus('Connected', 'green'); show($('btn-disconnect')); }
+    if (data.connected) { setStatus('Connected','green'); show($('btn-disconnect')); }
 
   } else if (event === 'scanning') {
-    setStatus('Scanning…', 'yellow');
+    setStatus('Scanning…','yellow');
 
   } else if (event === 'devices') {
     $('btn-scan').textContent = 'Scan for PM5';
     const list = $('device-list');
-    list.innerHTML = '';
-    show(list);
-    if (data.length === 0) {
-      list.innerHTML = '<p class="text-xs text-gray-500 text-center py-2">No PM5 found. Is it powered on?</p>';
+    list.innerHTML = ''; show(list);
+    if (!data.length) {
+      list.innerHTML = '<p class="text-xs text-gray-500 text-center py-2">No PM5 found.</p>';
     } else {
       data.forEach(d => {
         const btn = document.createElement('button');
-        btn.className = 'w-full py-3 px-4 rounded-xl bg-gray-800 active:bg-gray-700 text-left text-sm transition';
+        btn.className = 'w-full py-3 px-4 rounded-xl bg-gray-800 text-left text-sm';
         btn.innerHTML = `<span class="font-medium">${d.name}</span><br><span class="text-xs text-gray-400">${d.address}</span>`;
         btn.onclick   = () => connectDevice(d.address);
         list.appendChild(btn);
@@ -268,28 +401,24 @@ function handle(msg) {
     }
 
   } else if (event === 'connected') {
-    setStatus('Connected', 'green');
-    hide($('device-list'));
-    show($('panel-workout'));
-    show($('btn-disconnect'));
+    setStatus('Connected','green');
+    hide($('device-list')); show($('panel-workout')); show($('btn-disconnect'));
 
   } else if (event === 'connect_failed') {
-    setStatus('Failed', 'red');
+    setStatus('Failed','red');
 
   } else if (event === 'disconnected') {
-    setStatus('Disconnected', 'gray');
-    hide($('panel-workout'));
-    hide($('btn-disconnect'));
-    if (recording) { stopClock(); recording = false; }
-
-  } else if (event === 'workout_started') {
-    // handled in startWorkout()
+    setStatus('Disconnected','gray');
+    hide($('panel-workout')); hide($('btn-disconnect'));
+    if (recording) { clearInterval(_clockInterval); recording = false; }
 
   } else if (event === 'stroke') {
     $('m-strokes').textContent = data.index;
-    $('m-peak').textContent    = `${data.peak.toFixed(0)}`;
-    if (data.rate > 0) $('m-rate').textContent = data.rate.toFixed(1);
-    if (data.hr  > 0) $('m-hr').textContent  = data.hr;
+    $('m-peak').textContent    = data.peak.toFixed(0);
+    if (data.rate  > 0) $('m-rate').textContent  = data.rate.toFixed(1);
+    if (data.hr    > 0) $('m-hr').textContent    = data.hr;
+    if (data.watts > 0) $('m-watts').textContent = data.watts;
+    if (data.split > 0) $('m-split').textContent = fmtSplit(data.split);
     appendStrokeRow(data);
 
   } else if (event === 'hr') {
@@ -304,23 +433,27 @@ function handle(msg) {
 function appendStrokeRow(d) {
   const log = $('stroke-log');
   const row = document.createElement('div');
-  row.className = 'flex justify-between text-xs text-gray-300 bg-gray-800 rounded-lg px-3 py-1.5';
+  row.className = 'grid grid-cols-5 gap-1 text-xs text-gray-300 bg-gray-800 rounded-lg px-2 py-1.5';
   row.innerHTML =
     `<span class="text-gray-500">#${d.index}</span>` +
-    `<span>${d.peak.toFixed(0)} N</span>` +
-    `<span>${d.rate > 0 ? d.rate.toFixed(1) + ' spm' : '—'}</span>` +
-    `<span>${d.ttp.toFixed(0)}% ttp</span>`;
+    `<span>${d.watts > 0 ? d.watts+'W' : '—'}</span>` +
+    `<span>${d.split > 0 ? fmtSplit(d.split) : '—'}</span>` +
+    `<span>${d.peak.toFixed(0)}N</span>` +
+    `<span>${d.rate > 0 ? d.rate.toFixed(1) : '—'}</span>`;
   log.appendChild(row);
   log.scrollTop = log.scrollHeight;
 }
 
 // ── Analysis rendering
 function renderResults(m) {
-  hide($('no-results'));
-  show($('analysis-content'));
+  currentMetrics = m;
+  hide($('no-results')); show($('analysis-content'));
+  populateCustomSelects();
 
   $('r-strokes').textContent     = m.stroke_count;
   $('r-duration').textContent    = fmtTime(m.duration);
+  $('r-watts').textContent       = m.average_watts   ? `${m.average_watts} W`  : '—';
+  $('r-split').textContent       = m.average_split   ? fmtSplit(m.average_split) : '—';
   $('r-avgpeak').textContent     = `${m.average_peak_force} N`;
   $('r-consistency').textContent = `${m.consistency_score} / 100`;
   $('r-hr').textContent          = m.average_hr ? `${m.average_hr} bpm` : '—';
@@ -328,56 +461,95 @@ function renderResults(m) {
 
   // Average force curve
   Plotly.newPlot('chart-avg', [{
-    x: m.time_axis,
-    y: m.average_force_curve,
+    x: m.time_axis, y: m.average_force_curve,
     type: 'scatter', mode: 'lines',
-    line: { color: '#3b82f6', width: 2.5 },
+    line: {color:'#3b82f6', width:2.5},
     fill: 'tozeroy', fillcolor: 'rgba(59,130,246,0.12)',
-  }], {
-    ...PL,
-    xaxis: { ...PL.xaxis, title: 'Time (s)' },
-    yaxis: { ...PL.yaxis, title: 'Force (N)', rangemode: 'tozero' },
-  }, PC);
+  }], { ...PL, xaxis:{...PL.xaxis,title:'Time (s)'}, yaxis:{...PL.yaxis,title:'Force (N)',rangemode:'tozero'} }, PC);
 
   // Peak forces
   Plotly.newPlot('chart-peaks', [{
-    x: m.stroke_indices,
-    y: m.peak_forces,
-    type: 'bar',
-    marker: { color: '#10b981' },
-  }], {
-    ...PL,
-    xaxis: { ...PL.xaxis, title: 'Stroke #' },
-    yaxis: { ...PL.yaxis, title: 'Peak (N)', rangemode: 'tozero' },
+    x: m.stroke_indices, y: m.peak_forces,
+    type: 'bar', marker:{color:'#10b981'},
+  }], { ...PL, xaxis:{...PL.xaxis,title:'Stroke #'}, yaxis:{...PL.yaxis,title:'Peak (N)',rangemode:'tozero'} }, PC);
+
+  // Watts per stroke
+  Plotly.newPlot('chart-watts', [{
+    x: m.stroke_indices, y: m.watts_per_stroke,
+    type: 'scatter', mode: 'lines+markers',
+    line:{color:'#f59e0b',width:2}, marker:{size:5,color:'#f59e0b'},
+  }], { ...PL, xaxis:{...PL.xaxis,title:'Stroke #'}, yaxis:{...PL.yaxis,title:'Watts',rangemode:'tozero'} }, PC);
+
+  // Split per stroke (invert y so faster = higher)
+  Plotly.newPlot('chart-split', [{
+    x: m.stroke_indices, y: m.split_per_stroke,
+    type: 'scatter', mode: 'lines+markers',
+    line:{color:'#a78bfa',width:2}, marker:{size:5,color:'#a78bfa'},
+    text: m.split_per_stroke.map(fmtSplit), hovertemplate: '%{text}<extra></extra>',
+  }], { ...PL,
+    xaxis:{...PL.xaxis,title:'Stroke #'},
+    yaxis:{...PL.yaxis, title:'Split (s/500m)', autorange:'reversed',
+           ticktext: m.split_per_stroke.map(fmtSplit),
+           tickvals: m.split_per_stroke},
   }, PC);
 
   // Time to peak
   Plotly.newPlot('chart-ttp', [{
-    x: m.stroke_indices,
-    y: m.time_to_peak_trend,
+    x: m.stroke_indices, y: m.time_to_peak_trend,
     type: 'scatter', mode: 'lines+markers',
-    line:   { color: '#f59e0b', width: 2 },
-    marker: { size: 5, color: '#f59e0b' },
-  }], {
-    ...PL,
-    xaxis: { ...PL.xaxis, title: 'Stroke #' },
-    yaxis: { ...PL.yaxis, title: '% of drive', range: [0, 100] },
-  }, PC);
+    line:{color:'#f87171',width:2}, marker:{size:5,color:'#f87171'},
+  }], { ...PL, xaxis:{...PL.xaxis,title:'Stroke #'}, yaxis:{...PL.yaxis,title:'% of drive',range:[0,100]} }, PC);
 
-  // HR trend
+  // HR trend (if available)
   if (m.average_hr && m.hr_trend.length > 0) {
     show($('panel-hr-chart'));
     Plotly.newPlot('chart-hr', [{
-      y: m.hr_trend,
-      type: 'scatter', mode: 'lines',
-      line: { color: '#ef4444', width: 2 },
-      fill: 'tozeroy', fillcolor: 'rgba(239,68,68,0.1)',
-    }], {
-      ...PL,
-      xaxis: { ...PL.xaxis, title: 'Sample' },
-      yaxis: { ...PL.yaxis, title: 'bpm' },
-    }, PC);
+      y: m.hr_trend, type:'scatter', mode:'lines',
+      line:{color:'#ef4444',width:2},
+      fill:'tozeroy', fillcolor:'rgba(239,68,68,0.1)',
+    }], { ...PL, xaxis:{...PL.xaxis,title:'Sample'}, yaxis:{...PL.yaxis,title:'bpm'} }, PC);
   }
+}
+
+// ── Custom graph builder
+function populateCustomSelects() {
+  ['custom-x','custom-y'].forEach((id, i) => {
+    const sel = $(id);
+    sel.innerHTML = '';
+    METRIC_DEFS.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m.key;
+      opt.textContent = m.unit ? `${m.label} (${m.unit})` : m.label;
+      sel.appendChild(opt);
+    });
+    // sensible defaults: X = Stroke Rate, Y = HR
+    if (id === 'custom-x') sel.value = 'stroke_rates';
+    if (id === 'custom-y') sel.value = 'hr_per_stroke';
+  });
+}
+
+function plotCustom() {
+  if (!currentMetrics) return;
+  const xKey = $('custom-x').value;
+  const yKey = $('custom-y').value;
+  const xDef = METRIC_DEFS.find(m => m.key === xKey);
+  const yDef = METRIC_DEFS.find(m => m.key === yKey);
+  const xData = currentMetrics[xKey] || [];
+  const yData = currentMetrics[yKey] || [];
+
+  show($('chart-custom'));
+  Plotly.newPlot('chart-custom', [{
+    x: xData, y: yData,
+    type: 'scatter', mode: 'markers+lines',
+    marker: { size: 7, color: '#60a5fa' },
+    line:   { color: '#60a5fa', width: 1.5 },
+    text: xData.map((_, i) => `Stroke #${i+1}`),
+    hovertemplate: `%{text}<br>${xDef.label}: %{x}<br>${yDef.label}: %{y}<extra></extra>`,
+  }], {
+    ...PL,
+    xaxis: { ...PL.xaxis, title: xDef.unit ? `${xDef.label} (${xDef.unit})` : xDef.label },
+    yaxis: { ...PL.yaxis, title: yDef.unit ? `${yDef.label} (${yDef.unit})` : yDef.label },
+  }, PC);
 }
 
 // ── History tab
@@ -386,7 +558,7 @@ async function loadHistory() {
   const list = await res.json();
   const el   = $('history-list');
   el.innerHTML = '';
-  if (list.length === 0) {
+  if (!list.length) {
     el.innerHTML = '<p class="text-gray-500 text-sm text-center py-8">No workouts saved yet.</p>';
     return;
   }
@@ -407,20 +579,112 @@ async function loadHistory() {
 async function loadWorkout(id) {
   const res  = await fetch(`/api/workouts/${id}`);
   const data = await res.json();
-  if (data.metrics) {
-    renderResults(data.metrics);
-    showTab('analysis');
+  if (data.metrics) { renderResults(data.metrics); showTab('analysis'); }
+}
+
+// ── Training tab
+let _trainingInit = false;
+
+async function initTraining() {
+  if (!_trainingInit) {
+    await loadSettingsUI();
+    _trainingInit = true;
   }
 }
 
-// ── Helpers
-function fmtTime(s) {
-  const m = Math.floor(s / 60);
-  return `${m}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+async function loadSettingsUI() {
+  const res = await fetch('/api/settings');
+  const s   = await res.json();
+  $('s-ftp').value  = s.ftp          || '';
+  $('s-thr').value  = s.threshold_hr || '';
+  $('s-rest').value = s.rest_hr      || '';
 }
-function fmtDate(iso) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+
+async function saveSettings() {
+  const body = {
+    ftp:          parseInt($('s-ftp').value)  || 0,
+    threshold_hr: parseInt($('s-thr').value)  || 175,
+    rest_hr:      parseInt($('s-rest').value) || 55,
+  };
+  await fetch('/api/settings', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(body),
+  });
+  show($('settings-saved'));
+  setTimeout(() => hide($('settings-saved')), 3000);
+}
+
+async function loadTrainingData() {
+  const res  = await fetch('/api/training-load');
+  const data = await res.json();
+
+  if (!data.length) {
+    $('tl-ctl').textContent = '0';
+    $('tl-atl').textContent = '0';
+    $('tl-tsb').textContent = '0';
+    return;
+  }
+
+  // Current status = last entry
+  const last = data[data.length - 1];
+  $('tl-ctl').textContent = last.ctl;
+  $('tl-atl').textContent = last.atl;
+  const tsb = last.tsb;
+  $('tl-tsb').textContent = tsb.toFixed(1);
+  $('tl-tsb').style.color = tsb >= 5 ? '#a3e635' : tsb >= -10 ? '#facc15' : '#f87171';
+
+  const formLabel = $('tl-form-label');
+  if      (tsb >= 10)  { formLabel.textContent = '✦ Fresh — good to race';    formLabel.className = 'text-xs px-3 py-1 rounded-full bg-green-900 text-green-300'; }
+  else if (tsb >= 0)   { formLabel.textContent = '◎ Neutral — train normally'; formLabel.className = 'text-xs px-3 py-1 rounded-full bg-yellow-900 text-yellow-300'; }
+  else if (tsb >= -20) { formLabel.textContent = '⬇ Fatigued — ease off';     formLabel.className = 'text-xs px-3 py-1 rounded-full bg-orange-900 text-orange-300'; }
+  else                 { formLabel.textContent = '⚠ Very fatigued — rest';    formLabel.className = 'text-xs px-3 py-1 rounded-full bg-red-900 text-red-300'; }
+
+  const dates = data.map(d => d.date);
+  const ctls  = data.map(d => d.ctl);
+  const atls  = data.map(d => d.atl);
+  const tsbs  = data.map(d => d.tsb);
+  const tsss  = data.filter(d => d.tss > 0);
+
+  // CTL + ATL chart
+  Plotly.newPlot('chart-ctl-atl', [
+    { x: dates, y: ctls, name: 'Fitness (CTL)', type: 'scatter', mode: 'lines',
+      line: {color:'#3b82f6', width:2.5} },
+    { x: dates, y: atls, name: 'Fatigue (ATL)', type: 'scatter', mode: 'lines',
+      line: {color:'#f97316', width:2.5} },
+  ], {
+    ...PL,
+    legend: {orientation:'h', y:1.15, font:{color:'#9ca3af',size:10}},
+    xaxis:  {...PL.xaxis, title:'Date'},
+    yaxis:  {...PL.yaxis, title:'Load', rangemode:'tozero'},
+  }, PC);
+
+  // TSB chart (bars coloured by sign)
+  Plotly.newPlot('chart-tsb', [{
+    x: dates, y: tsbs,
+    type: 'bar',
+    marker: { color: tsbs.map(v => v >= 0 ? '#a3e635' : '#f87171') },
+    name: 'Form (TSB)',
+  }], {
+    ...PL,
+    xaxis: {...PL.xaxis, title:'Date'},
+    yaxis: {...PL.yaxis, title:'TSB'},
+    shapes: [{ type:'line', x0:dates[0], x1:dates[dates.length-1],
+               y0:0, y1:0, line:{color:'#6b7280',width:1} }],
+  }, PC);
+
+  // TSS per workout
+  Plotly.newPlot('chart-tss', [{
+    x: tsss.map(d => d.date),
+    y: tsss.map(d => d.tss),
+    type: 'bar',
+    marker: {color:'#818cf8'},
+    name: 'TSS',
+  }], {
+    ...PL,
+    xaxis: {...PL.xaxis, title:'Date'},
+    yaxis: {...PL.yaxis, title:'TSS', rangemode:'tozero'},
+  }, PC);
 }
 
 // ── Boot
@@ -428,8 +692,8 @@ connectWS();
 </script>
 
 <style>
-.active-tab  { color: #60a5fa; border-bottom: 2px solid #3b82f6; }
-.tab-btn     { color: #6b7280; }
+  .active-tab { color: #60a5fa; border-bottom: 2px solid #3b82f6; }
+  .tab-btn    { color: #6b7280; }
 </style>
 </body>
 </html>
