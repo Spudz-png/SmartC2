@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+
+# Workout data (personal — not committed)
+data/
+
+# OS
+.DS_Store
+Thumbs.db
