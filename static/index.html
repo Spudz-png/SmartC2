@@ -167,6 +167,12 @@
         <div id="chart-hr" style="height:160px"></div>
       </div>
 
+      <!-- HR Zone distribution -->
+      <div id="panel-zone-dist" class="hidden bg-gray-900 rounded-2xl p-4">
+        <p class="text-sm font-semibold mb-1">HR Zone Distribution</p>
+        <div id="chart-zone-dist" style="height:200px"></div>
+      </div>
+
       <!-- ── Custom Graph Builder ── -->
       <div class="bg-gray-900 rounded-2xl p-4 space-y-3">
         <p class="text-sm font-semibold">Custom Graph</p>
@@ -201,7 +207,12 @@
       <div class="grid grid-cols-3 gap-3">
         <div>
           <label class="text-xs text-gray-400 block mb-1">FTP (W)</label>
-          <input id="s-ftp" type="number" min="0" max="500" placeholder="0"
+          <input id="s-ftp" type="number" min="0" max="600" placeholder="0"
+            class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700">
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Max HR</label>
+          <input id="s-maxhr" type="number" min="100" max="230" placeholder="0"
             class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700">
         </div>
         <div>
@@ -214,12 +225,52 @@
           <input id="s-rest" type="number" min="30" max="100" placeholder="55"
             class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700">
         </div>
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Age (optional)</label>
+          <input id="s-age" type="number" min="10" max="100" placeholder="—"
+            class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700">
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Sex</label>
+          <select id="s-sex" class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700">
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </div>
       </div>
-      <button onclick="saveSettings()"
-        class="w-full py-2.5 rounded-xl bg-blue-600 active:bg-blue-700 font-semibold text-sm transition">
-        Save Settings
+      <button onclick="estimateMaxHR()"
+        class="w-full py-2 rounded-xl bg-gray-700 active:bg-gray-600 text-sm text-gray-300">
+        Estimate Max HR from Age (Tanaka / Gulati)
       </button>
-      <p id="settings-saved" class="hidden text-xs text-green-400 text-center">Saved — reload training data to apply.</p>
+      <div class="grid grid-cols-2 gap-3">
+        <button onclick="saveSettings()"
+          class="py-2.5 rounded-xl bg-blue-600 active:bg-blue-700 font-semibold text-sm transition">
+          Save Settings
+        </button>
+        <button onclick="loadZones()"
+          class="py-2.5 rounded-xl bg-gray-700 active:bg-gray-600 font-semibold text-sm">
+          Show HR Zones
+        </button>
+      </div>
+      <p id="settings-saved" class="hidden text-xs text-green-400 text-center">Saved.</p>
+    </div>
+
+    <!-- HR Zones table -->
+    <div id="panel-zones" class="hidden bg-gray-900 rounded-2xl p-4 space-y-3">
+      <div class="flex justify-between items-center">
+        <p class="text-sm font-semibold">HR Zones</p>
+        <span id="zones-max-hr" class="text-xs text-gray-400"></span>
+      </div>
+      <!-- % Max HR zones -->
+      <div>
+        <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">% of Max HR</p>
+        <div id="zones-max-table" class="space-y-1.5"></div>
+      </div>
+      <!-- Karvonen zones -->
+      <div id="zones-hrr-section">
+        <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">Karvonen (Heart Rate Reserve)</p>
+        <div id="zones-hrr-table" class="space-y-1.5"></div>
+      </div>
     </div>
 
     <!-- Current status card -->
@@ -441,7 +492,7 @@ function handle(msg) {
     $('m-hr').textContent = data.hr;
 
   } else if (event === 'results') {
-    renderResults(data);
+    renderResults(data, msg.hr_zone_dist || null);
     showTab('analysis');
   }
 }
@@ -461,7 +512,7 @@ function appendStrokeRow(d) {
 }
 
 // ── Analysis rendering
-function renderResults(m) {
+function renderResults(m, hrZoneDist = null) {
   currentMetrics = m;
   hide($('no-results')); show($('analysis-content'));
   populateCustomSelects();
@@ -539,6 +590,23 @@ function renderResults(m) {
     xaxis: {...PL.xaxis, title:'Stroke #'},
     yaxis: {...PL.yaxis, title:'Time (s)', rangemode:'tozero'},
   }, PC);
+
+  // HR zone distribution
+  if (hrZoneDist && hrZoneDist.length) {
+    show($('panel-zone-dist'));
+    Plotly.newPlot('chart-zone-dist', [{
+      x: hrZoneDist.map(z => `${z.zone}<br>${z.label}`),
+      y: hrZoneDist.map(z => z.pct),
+      type: 'bar',
+      marker: { color: hrZoneDist.map(z => z.color) },
+      text:   hrZoneDist.map(z => `${z.pct}%`),
+      textposition: 'outside',
+    }], {
+      ...PL,
+      xaxis: {...PL.xaxis, title: ''},
+      yaxis: {...PL.yaxis, title: '% of time', range:[0,100]},
+    }, PC);
+  }
 
   // HR trend (if available)
   if (m.average_hr && m.hr_trend.length > 0) {
@@ -619,7 +687,7 @@ async function loadHistory() {
 async function loadWorkout(id) {
   const res  = await fetch(`/api/workouts/${id}`);
   const data = await res.json();
-  if (data.metrics) { renderResults(data.metrics); showTab('analysis'); }
+  if (data.metrics) { renderResults(data.metrics, data.hr_zone_dist || null); showTab('analysis'); }
 }
 
 // ── Training tab
@@ -635,16 +703,32 @@ async function initTraining() {
 async function loadSettingsUI() {
   const res = await fetch('/api/settings');
   const s   = await res.json();
-  $('s-ftp').value  = s.ftp          || '';
-  $('s-thr').value  = s.threshold_hr || '';
-  $('s-rest').value = s.rest_hr      || '';
+  $('s-ftp').value   = s.ftp          || '';
+  $('s-maxhr').value = s.max_hr       || '';
+  $('s-thr').value   = s.threshold_hr || '';
+  $('s-rest').value  = s.rest_hr      || '';
+  $('s-age').value   = s.age          || '';
+  $('s-sex').value   = s.sex          || 'male';
+}
+
+function estimateMaxHR() {
+  const age = parseInt($('s-age').value) || 0;
+  if (!age) { alert('Enter your age first.'); return; }
+  const sex      = $('s-sex').value;
+  const estimate = sex === 'female'
+    ? Math.round(206 - 0.88 * age)   // Gulati
+    : Math.round(208 - 0.7  * age);  // Tanaka
+  $('s-maxhr').value = estimate;
 }
 
 async function saveSettings() {
   const body = {
-    ftp:          parseInt($('s-ftp').value)  || 0,
-    threshold_hr: parseInt($('s-thr').value)  || 175,
-    rest_hr:      parseInt($('s-rest').value) || 55,
+    ftp:          parseInt($('s-ftp').value)   || 0,
+    max_hr:       parseInt($('s-maxhr').value) || 0,
+    threshold_hr: parseInt($('s-thr').value)   || 175,
+    rest_hr:      parseInt($('s-rest').value)  || 55,
+    age:          parseInt($('s-age').value)   || 0,
+    sex:          $('s-sex').value || 'male',
   };
   await fetch('/api/settings', {
     method: 'POST',
@@ -653,6 +737,34 @@ async function saveSettings() {
   });
   show($('settings-saved'));
   setTimeout(() => hide($('settings-saved')), 3000);
+}
+
+async function loadZones() {
+  const res  = await fetch('/api/hr-zones');
+  const data = await res.json();
+  if (data.error) { alert(data.error); return; }
+
+  show($('panel-zones'));
+  $('zones-max-hr').textContent = `Max HR: ${data.max_hr} bpm`;
+
+  function zoneRow(z) {
+    return `<div class="flex items-center gap-2 text-xs">
+      <div class="w-2 h-2 rounded-full flex-shrink-0" style="background:${z.color}"></div>
+      <span class="w-16 font-medium">${z.zone}</span>
+      <span class="text-gray-400 w-24">${z.label}</span>
+      <span class="tabular-nums">${z.min_hr}–${z.max_hr} bpm</span>
+      <span class="text-gray-500 ml-auto">${z.min_pct}–${z.max_pct}%</span>
+    </div>`;
+  }
+
+  $('zones-max-table').innerHTML = data.zones_max.map(zoneRow).join('');
+
+  if (data.zones_hrr) {
+    show($('zones-hrr-section'));
+    $('zones-hrr-table').innerHTML = data.zones_hrr.map(zoneRow).join('');
+  } else {
+    hide($('zones-hrr-section'));
+  }
 }
 
 async function loadTrainingData() {

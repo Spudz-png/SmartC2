@@ -15,7 +15,9 @@ from pydantic import BaseModel
 from pm5_ble import PM5BLE
 from workout_recorder import WorkoutRecorder
 from metrics import compute
-from training_load import workout_tss, compute_history
+from training_load import (workout_tss, compute_history,
+                           hr_zones_max, hr_zones_karvonen,
+                           zone_distribution, max_hr_estimate)
 
 # ─────────────────────────── paths
 BASE     = Path(__file__).parent
@@ -25,7 +27,8 @@ SETTINGS = BASE / "data" / "settings.json"
 STATIC.mkdir(exist_ok=True)
 DATA.mkdir(parents=True, exist_ok=True)
 
-DEFAULT_SETTINGS = {"ftp": 0, "threshold_hr": 175, "rest_hr": 55}
+DEFAULT_SETTINGS = {"ftp": 0, "threshold_hr": 175, "rest_hr": 55,
+                    "max_hr": 0, "age": 0, "sex": "male"}
 
 def load_settings() -> dict:
     if SETTINGS.exists():
@@ -125,12 +128,41 @@ class Settings(BaseModel):
     ftp:          int = 0
     threshold_hr: int = 175
     rest_hr:      int = 55
+    max_hr:       int = 0
+    age:          int = 0
+    sex:          str = "male"
 
 @app.post("/api/settings")
 async def post_settings(s: Settings):
-    data = {"ftp": s.ftp, "threshold_hr": s.threshold_hr, "rest_hr": s.rest_hr}
+    data = {"ftp": s.ftp, "threshold_hr": s.threshold_hr, "rest_hr": s.rest_hr,
+            "max_hr": s.max_hr, "age": s.age, "sex": s.sex}
     save_settings(data)
     return JSONResponse({"ok": True})
+
+@app.get("/api/hr-zones")
+async def get_hr_zones():
+    s      = load_settings()
+    max_hr = s.get("max_hr", 0)
+    rest   = s.get("rest_hr", 55)
+    age    = s.get("age", 0)
+    sex    = s.get("sex", "male")
+
+    # Estimate max HR from age if not set directly
+    if max_hr <= 0 and age > 0:
+        max_hr = max_hr_estimate(age, "gulati" if sex == "female" else "tanaka")
+
+    if max_hr <= 0:
+        return JSONResponse({"error": "Set Max HR or Age in settings."})
+
+    zones_max = hr_zones_max(max_hr)
+    zones_hrr = hr_zones_karvonen(max_hr, rest) if rest > 0 else None
+
+    return JSONResponse({
+        "max_hr":     max_hr,
+        "rest_hr":    rest,
+        "zones_max":  zones_max,
+        "zones_hrr":  zones_hrr,
+    })
 
 # ── Training load history
 @app.get("/api/training-load")
@@ -212,8 +244,21 @@ async def _handle(msg: dict, ws: WebSocket) -> None:
             ],
         }
         (DATA / f"{wid}.json").write_text(json.dumps(data, indent=2))
+        # HR zone distribution if we have HR samples and max_hr set
+        s      = load_settings()
+        max_hr = s.get("max_hr", 0)
+        age    = s.get("age", 0)
+        sex    = s.get("sex", "male")
+        if max_hr <= 0 and age > 0:
+            max_hr = max_hr_estimate(age, "gulati" if sex == "female" else "tanaka")
+        hr_zone_dist = None
+        if max_hr > 0 and recorder.hr_samples:
+            zones = hr_zones_karvonen(max_hr, s.get("rest_hr", 55))
+            hr_zone_dist = zone_distribution(recorder.hr_samples, zones)
+
         await broadcast({"event": "results", "data": m, "tss": tss,
-                         "tss_method": tss_method, "workout_id": wid})
+                         "tss_method": tss_method, "workout_id": wid,
+                         "hr_zone_dist": hr_zone_dist})
 
 # ─────────────────────────── entry point
 if __name__ == "__main__":
