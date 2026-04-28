@@ -67,8 +67,10 @@ def _on_force(seq: int, values: list[float]) -> None:
                 "hr":      stroke.hr,
                 "rate":    recorder.stroke_rate,
                 "elapsed": round(recorder.duration),
-                "watts":   stroke.watts,
-                "split":   stroke.split,
+                "watts":        stroke.watts,
+                "split":        stroke.split,
+                "drive_length": stroke.drive_length,
+                "drive_time":   stroke.drive_time,
             },
         }))
 

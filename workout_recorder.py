@@ -17,6 +17,8 @@ class Stroke:
     watts:            int   = 0
     split:            int   = 0    # seconds per 500m
     rate:             float = 0.0  # spm
+    drive_length:     float = 0.0  # metres
+    drive_time:       float = 0.0  # seconds (derived from force curve sample count)
 
 
 class WorkoutRecorder:
@@ -99,6 +101,8 @@ class WorkoutRecorder:
             watts            = self._last_stroke.get("watts", 0),
             split            = self._last_stroke.get("split", 0),
             rate             = self.stroke_rate,
+            drive_length     = self._last_stroke.get("drive_length", 0.0),
+            drive_time       = round(len(buf) * 0.1, 2),
         )
         self.strokes.append(stroke)
         return stroke

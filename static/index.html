@@ -115,6 +115,8 @@
         <div><div class="text-xs text-gray-400">Consistency</div><div id="r-consistency" class="text-xl font-bold">—</div></div>
         <div><div class="text-xs text-gray-400">Avg HR</div><div id="r-hr" class="text-xl font-bold">—</div></div>
         <div><div class="text-xs text-gray-400">Time to Peak</div><div id="r-ttp" class="text-xl font-bold">—</div></div>
+        <div><div class="text-xs text-gray-400">Avg Drive Length</div><div id="r-drive-len" class="text-xl font-bold">—</div></div>
+        <div><div class="text-xs text-gray-400">Avg Drive Time</div><div id="r-drive-time" class="text-xl font-bold">—</div></div>
       </div>
 
       <!-- Average force curve -->
@@ -145,6 +147,18 @@
       <div class="bg-gray-900 rounded-2xl p-4">
         <p class="text-sm font-semibold mb-1">Time to Peak (% of drive)</p>
         <div id="chart-ttp" style="height:180px"></div>
+      </div>
+
+      <!-- Drive length per stroke -->
+      <div class="bg-gray-900 rounded-2xl p-4">
+        <p class="text-sm font-semibold mb-1">Drive Length per Stroke</p>
+        <div id="chart-drive-len" style="height:180px"></div>
+      </div>
+
+      <!-- Drive time per stroke -->
+      <div class="bg-gray-900 rounded-2xl p-4">
+        <p class="text-sm font-semibold mb-1">Drive Time per Stroke</p>
+        <div id="chart-drive-time" style="height:180px"></div>
       </div>
 
       <!-- HR trend -->
@@ -292,7 +306,9 @@ const METRIC_DEFS = [
   { key: 'peak_forces',        label: 'Peak Force',        unit: 'N'        },
   { key: 'stroke_rates',       label: 'Stroke Rate',       unit: 'spm'      },
   { key: 'hr_per_stroke',      label: 'Heart Rate',        unit: 'bpm'      },
-  { key: 'time_to_peak_trend', label: 'Time to Peak',      unit: '% drive'  },
+  { key: 'time_to_peak_trend',      label: 'Time to Peak',   unit: '% drive' },
+  { key: 'drive_length_per_stroke', label: 'Drive Length',   unit: 'm'       },
+  { key: 'drive_time_per_stroke',   label: 'Drive Time',     unit: 's'       },
 ];
 
 let currentMetrics = null;
@@ -456,8 +472,10 @@ function renderResults(m) {
   $('r-split').textContent       = m.average_split   ? fmtSplit(m.average_split) : '—';
   $('r-avgpeak').textContent     = `${m.average_peak_force} N`;
   $('r-consistency').textContent = `${m.consistency_score} / 100`;
-  $('r-hr').textContent          = m.average_hr ? `${m.average_hr} bpm` : '—';
+  $('r-hr').textContent          = m.average_hr           ? `${m.average_hr} bpm`           : '—';
   $('r-ttp').textContent         = `${m.average_time_to_peak.toFixed(1)}%`;
+  $('r-drive-len').textContent   = m.average_drive_length ? `${m.average_drive_length} m`   : '—';
+  $('r-drive-time').textContent  = m.average_drive_time   ? `${m.average_drive_time} s`     : '—';
 
   // Average force curve
   Plotly.newPlot('chart-avg', [{
@@ -499,6 +517,28 @@ function renderResults(m) {
     type: 'scatter', mode: 'lines+markers',
     line:{color:'#f87171',width:2}, marker:{size:5,color:'#f87171'},
   }], { ...PL, xaxis:{...PL.xaxis,title:'Stroke #'}, yaxis:{...PL.yaxis,title:'% of drive',range:[0,100]} }, PC);
+
+  // Drive length per stroke
+  Plotly.newPlot('chart-drive-len', [{
+    x: m.stroke_indices, y: m.drive_length_per_stroke,
+    type: 'scatter', mode: 'lines+markers',
+    line: {color:'#34d399', width:2}, marker:{size:5, color:'#34d399'},
+  }], {
+    ...PL,
+    xaxis: {...PL.xaxis, title:'Stroke #'},
+    yaxis: {...PL.yaxis, title:'Length (m)', rangemode:'tozero'},
+  }, PC);
+
+  // Drive time per stroke
+  Plotly.newPlot('chart-drive-time', [{
+    x: m.stroke_indices, y: m.drive_time_per_stroke,
+    type: 'scatter', mode: 'lines+markers',
+    line: {color:'#fb923c', width:2}, marker:{size:5, color:'#fb923c'},
+  }], {
+    ...PL,
+    xaxis: {...PL.xaxis, title:'Stroke #'},
+    yaxis: {...PL.yaxis, title:'Time (s)', rangemode:'tozero'},
+  }, PC);
 
   // HR trend (if available)
   if (m.average_hr && m.hr_trend.length > 0) {
