@@ -26,7 +26,7 @@
     <button onclick="openPRModal()" id="pr-6k"   class="pr-chip flex-shrink-0 text-center"><span class="text-xs text-gray-500 block">6K</span><span class="text-sm font-bold tabular-nums">—</span></button>
     <button onclick="openPRModal()" id="pr-10k"  class="pr-chip flex-shrink-0 text-center"><span class="text-xs text-gray-500 block">10K</span><span class="text-sm font-bold tabular-nums">—</span></button>
     <button onclick="openPRModal()" id="pr-watts" class="pr-chip flex-shrink-0 text-center"><span class="text-xs text-gray-500 block">Max W</span><span class="text-sm font-bold tabular-nums">—</span></button>
-    <button onclick="openPRModal()" class="ml-auto text-gray-600 hover:text-gray-300 text-xs flex-shrink-0">✏ Edit</button>
+    <button onclick="openPRModal()" class="flex-shrink-0 text-gray-500 hover:text-gray-300 text-xs leading-none px-1" title="Edit PRs">✏</button>
   </div>
 
   <!-- Tab bar -->
@@ -372,6 +372,10 @@
           <button onclick="setChartView('force','side')"    id="btn-force-side"
             class="flex-1 py-1.5 rounded-lg text-xs font-semibold text-gray-400">Side by Side</button>
         </div>
+        <button onclick="renderForceChart()"
+          class="w-full py-2 rounded-xl bg-gray-700 active:bg-gray-600 text-sm font-semibold">
+          Plot Force Curve
+        </button>
         <div id="cmp-force-area"></div>
       </div>
 
@@ -723,16 +727,14 @@ function addCustomChart() {
      <div class="grid grid-cols-2 gap-3">
        <div>
          <label class="text-xs text-gray-400 block mb-1">X Axis</label>
-         <select id="cx-x-${idx}" class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700"></select>
+         <select id="cx-x-${idx}" onchange="plotCustomById(${idx})" class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700"></select>
        </div>
        <div>
          <label class="text-xs text-gray-400 block mb-1">Y Axis</label>
-         <select id="cx-y-${idx}" class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700"></select>
+         <select id="cx-y-${idx}" onchange="plotCustomById(${idx})" class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700"></select>
        </div>
      </div>
-     <button onclick="plotCustomById(${idx})"
-       class="w-full py-2.5 rounded-xl bg-blue-600 active:bg-blue-700 font-semibold text-sm">Plot</button>
-     <div id="cx-chart-${idx}" class="hidden" style="height:270px"></div>`;
+     <div id="cx-chart-${idx}" style="height:270px"></div>`;
 
   $('custom-charts-container').appendChild(card);
 
@@ -754,8 +756,6 @@ function plotCustomById(idx) {
   const yKey = $(`cx-y-${idx}`).value;
   const xDef = METRIC_DEFS.find(m => m.key === xKey);
   const yDef = METRIC_DEFS.find(m => m.key === yKey);
-  const chartDiv = $(`cx-chart-${idx}`);
-  chartDiv.classList.remove('hidden');
   Plotly.newPlot(`cx-chart-${idx}`, [{
     x: currentMetrics[xKey] || [],
     y: currentMetrics[yKey] || [],
@@ -1194,8 +1194,6 @@ function addCmpCustomChart() {
        <button onclick="setCcxView(${idx},'side')"    id="ccx-btn-side-${idx}"
          class="flex-1 py-1.5 rounded-lg text-xs font-semibold text-gray-400">Side by Side</button>
      </div>
-     <button onclick="plotCmpCustom(${idx})"
-       class="w-full py-2.5 rounded-xl bg-gray-700 active:bg-gray-600 font-semibold text-sm">Plot</button>
      <div id="ccx-area-${idx}"></div>`;
 
   $('cmp-custom-charts').appendChild(card);
@@ -1214,6 +1212,8 @@ function addCmpCustomChart() {
 
   // Render pills for this chart (default: all selected)
   renderCcxPills(idx);
+  // Auto-plot immediately after creation
+  if (importedUsers.length >= 2) setTimeout(() => plotCmpCustom(idx), 250);
 }
 
 const _ccxViews    = {};   // idx → 'overlay'|'side'
