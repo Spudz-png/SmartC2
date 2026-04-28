@@ -41,7 +41,7 @@
   </div><!-- /sticky top -->
 
   <!-- ═══════════════════ LIVE TAB -->
-  <div id="page-live" class="p-4 space-y-4 pb-8">
+  <div id="page-live" class="p-4 space-y-4 pb-32">
 
     <!-- Connection -->
     <div id="panel-connect" class="bg-gray-900 rounded-2xl p-4 space-y-3">
@@ -143,55 +143,55 @@
       <!-- Average force curve -->
       <div class="bg-gray-900 rounded-2xl p-4">
         <p class="text-sm font-semibold mb-1">Average Force Curve</p>
-        <div id="chart-avg" style="height:230px"></div>
+        <div id="chart-avg" style="height:300px"></div>
       </div>
 
       <!-- Peak force per stroke -->
       <div class="bg-gray-900 rounded-2xl p-4">
         <p class="text-sm font-semibold mb-1">Peak Force per Stroke</p>
-        <div id="chart-peaks" style="height:180px"></div>
+        <div id="chart-peaks" style="height:230px"></div>
       </div>
 
       <!-- Watts per stroke -->
       <div class="bg-gray-900 rounded-2xl p-4">
         <p class="text-sm font-semibold mb-1">Watts per Stroke</p>
-        <div id="chart-watts" style="height:180px"></div>
+        <div id="chart-watts" style="height:230px"></div>
       </div>
 
       <!-- Split per stroke -->
       <div class="bg-gray-900 rounded-2xl p-4">
         <p class="text-sm font-semibold mb-1">Split per Stroke</p>
-        <div id="chart-split" style="height:180px"></div>
+        <div id="chart-split" style="height:230px"></div>
       </div>
 
       <!-- Time to peak -->
       <div class="bg-gray-900 rounded-2xl p-4">
         <p class="text-sm font-semibold mb-1">Time to Peak (% of drive)</p>
-        <div id="chart-ttp" style="height:180px"></div>
+        <div id="chart-ttp" style="height:230px"></div>
       </div>
 
       <!-- Drive length per stroke -->
       <div class="bg-gray-900 rounded-2xl p-4">
         <p class="text-sm font-semibold mb-1">Drive Length per Stroke</p>
-        <div id="chart-drive-len" style="height:180px"></div>
+        <div id="chart-drive-len" style="height:230px"></div>
       </div>
 
       <!-- Drive time per stroke -->
       <div class="bg-gray-900 rounded-2xl p-4">
         <p class="text-sm font-semibold mb-1">Drive Time per Stroke</p>
-        <div id="chart-drive-time" style="height:180px"></div>
+        <div id="chart-drive-time" style="height:230px"></div>
       </div>
 
       <!-- HR trend -->
       <div id="panel-hr-chart" class="hidden bg-gray-900 rounded-2xl p-4">
         <p class="text-sm font-semibold mb-1">Heart Rate</p>
-        <div id="chart-hr" style="height:160px"></div>
+        <div id="chart-hr" style="height:210px"></div>
       </div>
 
       <!-- HR Zone distribution -->
       <div id="panel-zone-dist" class="hidden bg-gray-900 rounded-2xl p-4">
         <p class="text-sm font-semibold mb-1">HR Zone Distribution</p>
-        <div id="chart-zone-dist" style="height:200px"></div>
+        <div id="chart-zone-dist" style="height:250px"></div>
       </div>
 
       <!-- ── Custom Graphs ── -->
@@ -306,9 +306,6 @@
           <div class="text-xs text-gray-400 mt-1">Form (TSB)</div>
         </div>
       </div>
-      <div class="mt-3 text-center">
-        <span id="tl-form-label" class="text-xs px-3 py-1 rounded-full bg-gray-700 text-gray-300">—</span>
-      </div>
     </div>
 
 
@@ -321,19 +318,19 @@
     <!-- CTL + ATL history chart -->
     <div class="bg-gray-900 rounded-2xl p-4">
       <p class="text-sm font-semibold mb-1">Fitness &amp; Fatigue Over Time</p>
-      <div id="chart-ctl-atl" style="height:220px"></div>
+      <div id="chart-ctl-atl" style="height:270px"></div>
     </div>
 
     <!-- TSB chart -->
     <div class="bg-gray-900 rounded-2xl p-4">
       <p class="text-sm font-semibold mb-1">Form (TSB) Over Time</p>
-      <div id="chart-tsb" style="height:180px"></div>
+      <div id="chart-tsb" style="height:230px"></div>
     </div>
 
     <!-- TSS per workout chart -->
     <div class="bg-gray-900 rounded-2xl p-4">
       <p class="text-sm font-semibold mb-1">Stress Score per Workout</p>
-      <div id="chart-tss" style="height:180px"></div>
+      <div id="chart-tss" style="height:230px"></div>
     </div>
 
   </div><!-- /training -->
@@ -392,7 +389,7 @@
   </div><!-- /compare -->
 
   <!-- ═══════════════════ HISTORY TAB -->
-  <div id="page-history" class="hidden p-4 pb-8">
+  <div id="page-history" class="hidden p-4 pb-32">
     <div class="flex justify-between items-center mb-3">
       <p class="text-xs text-gray-500 uppercase tracking-wider">Past Workouts</p>
       <button onclick="loadHistory()" class="text-xs text-blue-400">Refresh</button>
@@ -735,7 +732,7 @@ function addCustomChart() {
      </div>
      <button onclick="plotCustomById(${idx})"
        class="w-full py-2.5 rounded-xl bg-blue-600 active:bg-blue-700 font-semibold text-sm">Plot</button>
-     <div id="cx-chart-${idx}" class="hidden" style="height:220px"></div>`;
+     <div id="cx-chart-${idx}" class="hidden" style="height:270px"></div>`;
 
   $('custom-charts-container').appendChild(card);
 
@@ -948,12 +945,6 @@ async function loadTrainingData() {
   const tsb = last.tsb;
   $('tl-tsb').textContent = tsb.toFixed(1);
   $('tl-tsb').style.color = tsb >= 5 ? '#a3e635' : tsb >= -10 ? '#facc15' : '#f87171';
-
-  const formLabel = $('tl-form-label');
-  if      (tsb >= 10)  { formLabel.textContent = '✦ Fresh — good to race';    formLabel.className = 'text-xs px-3 py-1 rounded-full bg-green-900 text-green-300'; }
-  else if (tsb >= 0)   { formLabel.textContent = '◎ Neutral — train normally'; formLabel.className = 'text-xs px-3 py-1 rounded-full bg-yellow-900 text-yellow-300'; }
-  else if (tsb >= -20) { formLabel.textContent = '⬇ Fatigued — ease off';     formLabel.className = 'text-xs px-3 py-1 rounded-full bg-orange-900 text-orange-300'; }
-  else                 { formLabel.textContent = '⚠ Very fatigued — rest';    formLabel.className = 'text-xs px-3 py-1 rounded-full bg-red-900 text-red-300'; }
 
   const dates = data.map(d => d.date);
   const ctls  = data.map(d => d.ctl);
@@ -1234,6 +1225,8 @@ function setCcxView(idx, view) {
   $(`ccx-btn-overlay-${idx}`).classList.toggle('text-gray-400', view !== 'overlay');
   $(`ccx-btn-side-${idx}`).classList.toggle('active-view',   view === 'side');
   $(`ccx-btn-side-${idx}`).classList.toggle('text-gray-400', view !== 'side');
+  // Auto-plot immediately when switching view
+  if (importedUsers.length >= 2) plotCmpCustom(idx);
 }
 
 function renderCcxPills(idx) {
@@ -1284,7 +1277,7 @@ function setChartView(chartKey, view) {
     $(id).classList.toggle('active-view', isActive);
     $(id).classList.toggle('text-gray-400', !isActive);
   });
-  if (chartKey === 'force') renderForceChart();
+  renderForceChart();   // always re-render force chart on any view change
 }
 
 // ── Core chart renderer (handles both charts + both views)
@@ -1310,7 +1303,7 @@ function buildChartArea(areaId, users, getX, getY, xLabel, yLabel, isForce) {
   function mkDiv(height) {
     const d  = document.createElement('div');
     d.id     = `cmp-pl-${++_cmpPlotSeq}`;
-    d.style.cssText = `height:${height}px;width:100%`;
+    d.style.cssText = `height:${height}px;width:100%;display:block`;
     return d;
   }
 
@@ -1326,7 +1319,7 @@ function buildChartArea(areaId, users, getX, getY, xLabel, yLabel, isForce) {
     });
     area.appendChild(tags);
 
-    const div = mkDiv(230);
+    const div = mkDiv(320);
     area.appendChild(div);
     jobs.push({
       id: div.id,
@@ -1350,7 +1343,7 @@ function buildChartArea(areaId, users, getX, getY, xLabel, yLabel, isForce) {
       lbl.style.color = u.color;
       lbl.textContent = u.name;
       wrap.appendChild(lbl);
-      const div = mkDiv(155);
+      const div = mkDiv(220);
       wrap.appendChild(div);
       area.appendChild(wrap);
       jobs.push({
@@ -1370,10 +1363,15 @@ function buildChartArea(areaId, users, getX, getY, xLabel, yLabel, isForce) {
     });
   }
 
-  // Double rAF: first frame shows the container, second frame Plotly can measure it
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    jobs.forEach(({ id, traces, layout }) => Plotly.newPlot(id, traces, layout, PC));
-  }));
+  // setTimeout 200ms: gives browser time to lay out the newly-visible container.
+  // We use responsive:false here so Plotly renders at the div's explicit px dimensions
+  // instead of waiting for a ResizeObserver that may not fire in time.
+  setTimeout(() => {
+    jobs.forEach(({ id, traces, layout }) => {
+      const el = document.getElementById(id);
+      if (el) Plotly.newPlot(id, traces, layout, { displayModeBar: false, responsive: false });
+    });
+  }, 200);
 }
 
 function renderForceChart() {

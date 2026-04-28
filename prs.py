@@ -7,7 +7,7 @@ _DATA_DIR  = Path(__file__).parent / "data"
 _PR_FILE   = _DATA_DIR / "prs.json"
 
 DISTANCE_TARGETS = {"2k": 2000, "5k": 5000, "6k": 6000, "10k": 10000}
-TOLERANCE        = 0.05   # ±5% — a 2 050 m row still counts as a 2K
+TOLERANCE        = 0.01   # ±1% — must be within 20 m of a 2K, 50 m of a 5K, etc.
 
 _DEFAULTS: dict = {"2k": None, "5k": None, "6k": None,
                    "10k": None, "max_watts": None}
