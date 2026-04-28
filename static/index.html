@@ -376,7 +376,10 @@
           class="w-full py-2 rounded-xl bg-gray-700 active:bg-gray-600 text-sm font-semibold">
           Plot Force Curve
         </button>
-        <div id="cmp-force-area"></div>
+        <!-- Fixed div — always in DOM so Plotly can always measure it -->
+        <div id="cmp-force-chart" style="height:320px"></div>
+        <!-- Side-by-side rows go here (dynamically filled) -->
+        <div id="cmp-force-rows" class="hidden space-y-1"></div>
       </div>
 
       <!-- Custom plots (unlimited) -->
@@ -1375,11 +1378,58 @@ function buildChartArea(areaId, users, getX, getY, xLabel, yLabel, isForce) {
 }
 
 function renderForceChart() {
-  const users = importedUsers.filter(u => selectedForForce.has(u.id));
-  buildChartArea('cmp-force-area', users,
-    u => u.metrics.time_axis,
-    u => u.metrics.average_force_curve,
-    'Time (s)', 'Force (N)', true);
+  const users   = importedUsers.filter(u => selectedForForce.has(u.id));
+  const overlay = chartViews.force === 'overlay';
+
+  $('cmp-force-chart').classList.toggle('hidden', !overlay);
+  $('cmp-force-rows').classList.toggle('hidden',  overlay);
+
+  const baseLayout = {
+    ...PL,
+    xaxis:  {...PL.xaxis, title:'Time (s)'},
+    yaxis:  {...PL.yaxis, title:'Force (N)', rangemode:'tozero'},
+    legend: {orientation:'h', y:1.15, font:{color:'#9ca3af',size:10}},
+    margin: {...PL.margin, t:20},
+  };
+
+  if (overlay) {
+    if (!users.length) return;
+    Plotly.newPlot('cmp-force-chart', users.map(u => ({
+      x: u.metrics.time_axis,
+      y: u.metrics.average_force_curve,
+      name: u.name, type:'scatter', mode:'lines',
+      line:{color:u.color, width:2.5},
+      fill:'tozeroy', fillcolor:hexToRgba(u.color, 0.1),
+    })), baseLayout, PC);
+
+  } else {
+    // Side-by-side: populate the fixed rows container then RAF once
+    const rowsEl = $('cmp-force-rows');
+    rowsEl.innerHTML = '';
+    const jobs = [];
+    users.forEach(u => {
+      const lbl = document.createElement('p');
+      lbl.className = 'text-xs font-bold mb-0.5';
+      lbl.style.color = u.color;
+      lbl.textContent = u.name;
+      rowsEl.appendChild(lbl);
+      const div = document.createElement('div');
+      div.id = `cmpf-${u.id}`;
+      div.style.cssText = 'height:210px;width:100%';
+      rowsEl.appendChild(div);
+      jobs.push({id: div.id, u});
+    });
+    requestAnimationFrame(() => {
+      jobs.forEach(({id, u}) => Plotly.newPlot(id, [{
+        x: u.metrics.time_axis,
+        y: u.metrics.average_force_curve,
+        type:'scatter', mode:'lines',
+        line:{color:u.color, width:2.5},
+        fill:'tozeroy', fillcolor:hexToRgba(u.color, 0.1),
+        showlegend:false,
+      }], {...baseLayout, legend:undefined, margin:{...PL.margin,t:4}}, PC));
+    });
+  }
 }
 
 
