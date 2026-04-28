@@ -372,12 +372,8 @@
           <button onclick="setChartView('force','side')"    id="btn-force-side"
             class="flex-1 py-1.5 rounded-lg text-xs font-semibold text-gray-400">Side by Side</button>
         </div>
-        <button onclick="renderForceChart()"
-          class="w-full py-2 rounded-xl bg-gray-700 active:bg-gray-600 text-sm font-semibold">
-          Plot Force Curve
-        </button>
         <!-- Fixed div — always in DOM so Plotly can always measure it -->
-        <div id="cmp-force-chart" style="height:320px"></div>
+        <div id="cmp-force-chart" style="height:400px"></div>
         <!-- Side-by-side rows go here (dynamically filled) -->
         <div id="cmp-force-rows" class="hidden space-y-1"></div>
       </div>
@@ -1389,7 +1385,7 @@ function renderForceChart() {
     xaxis:  {...PL.xaxis, title:'Time (s)'},
     yaxis:  {...PL.yaxis, title:'Force (N)', rangemode:'tozero'},
     legend: {orientation:'h', y:1.15, font:{color:'#9ca3af',size:10}},
-    margin: {...PL.margin, t:20},
+    margin: {t:24, b:48, l:64, r:48},
   };
 
   if (overlay) {
@@ -1415,7 +1411,7 @@ function renderForceChart() {
       rowsEl.appendChild(lbl);
       const div = document.createElement('div');
       div.id = `cmpf-${u.id}`;
-      div.style.cssText = 'height:210px;width:100%';
+      div.style.cssText = 'height:280px;width:100%';
       rowsEl.appendChild(div);
       jobs.push({id: div.id, u});
     });
