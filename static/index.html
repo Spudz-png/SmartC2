@@ -337,59 +337,44 @@
   <!-- ═══════════════════ COMPARE TAB -->
   <div id="page-compare" class="hidden p-4 space-y-4 pb-8">
 
-    <!-- Your workout -->
-    <div class="bg-gray-900 rounded-2xl p-4 space-y-3">
-      <p class="text-sm font-semibold">Your Workout</p>
-      <select id="cmp-my-id" onchange="loadMyCompareWorkout()"
-        class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700">
-        <option value="">Select a saved workout…</option>
-      </select>
-      <input id="cmp-label-a" type="text" value="Me" placeholder="Your label"
-        class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700">
+    <!-- Header -->
+    <div class="flex justify-between items-center">
+      <div>
+        <p class="text-sm font-semibold">Compare</p>
+        <p class="text-xs text-gray-500">Up to 8 users</p>
+      </div>
+      <button onclick="openImportModal()"
+        class="px-4 py-2 rounded-xl bg-blue-600 active:bg-blue-700 text-sm font-semibold">
+        + Import
+      </button>
     </div>
 
-    <!-- Comparison workout -->
-    <div class="bg-gray-900 rounded-2xl p-4 space-y-3">
-      <p class="text-sm font-semibold">Comparison Workout</p>
-      <p class="text-xs text-gray-400">Friend shares their workout JSON from <code class="bg-gray-700 px-1 rounded">data/workouts/</code> — upload it here.</p>
-      <label class="w-full py-3 rounded-xl bg-gray-800 text-sm text-center block cursor-pointer active:bg-gray-700 border border-gray-700">
-        <span id="cmp-file-label">⬆ Upload workout JSON</span>
-        <input type="file" id="cmp-file" accept=".json" class="hidden" onchange="loadCompareFile(event)">
-      </label>
-      <input id="cmp-label-b" type="text" value="Friend" placeholder="Their label"
-        class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700">
-    </div>
+    <!-- Imported user list -->
+    <div id="cmp-user-list" class="space-y-2"></div>
 
-    <!-- View toggle -->
-    <div class="bg-gray-900 rounded-2xl p-1.5 flex gap-1">
-      <button onclick="setCmpView('overlay')" id="btn-cmp-overlay"
-        class="flex-1 py-2 rounded-xl text-sm font-semibold transition active-view">Overlay</button>
-      <button onclick="setCmpView('side')" id="btn-cmp-side"
-        class="flex-1 py-2 rounded-xl text-sm font-semibold transition text-gray-400">Side by Side</button>
-    </div>
+    <!-- Empty state -->
+    <p id="cmp-empty" class="text-center text-gray-500 text-sm py-12">
+      Import at least 2 workouts to start comparing.
+    </p>
 
-    <!-- Run -->
-    <button onclick="runCompare()"
-      class="w-full py-3 rounded-2xl bg-blue-600 active:bg-blue-700 font-bold text-sm">
-      Compare
-    </button>
-
-    <!-- Results -->
-    <div id="cmp-results" class="hidden space-y-4">
+    <!-- Charts (visible once 2+ users) -->
+    <div id="cmp-charts" class="hidden space-y-4">
 
       <!-- Average force curve -->
-      <div class="bg-gray-900 rounded-2xl p-4">
-        <p class="text-sm font-semibold mb-2">Average Force Curve</p>
-        <div id="cmp-force-overlay" style="height:230px"></div>
-        <div id="cmp-force-side" class="hidden space-y-1">
-          <p id="cmp-row-label-a-force" class="text-xs font-semibold" style="color:#3b82f6">Me</p>
-          <div id="cmp-force-a" style="height:175px"></div>
-          <p id="cmp-row-label-b-force" class="text-xs font-semibold mt-2" style="color:#f97316">Friend</p>
-          <div id="cmp-force-b" style="height:175px"></div>
+      <div class="bg-gray-900 rounded-2xl p-4 space-y-3">
+        <p class="text-sm font-semibold">Average Force Curve</p>
+        <p class="text-xs text-gray-400">Select which users to show:</p>
+        <div id="cmp-force-pills" class="flex flex-wrap gap-2"></div>
+        <div class="bg-gray-800 rounded-xl p-1 flex gap-1">
+          <button onclick="setChartView('force','overlay')" id="btn-force-overlay"
+            class="flex-1 py-1.5 rounded-lg text-xs font-semibold active-view">Overlay</button>
+          <button onclick="setChartView('force','side')"    id="btn-force-side"
+            class="flex-1 py-1.5 rounded-lg text-xs font-semibold text-gray-400">Side by Side</button>
         </div>
+        <div id="cmp-force-area"></div>
       </div>
 
-      <!-- Custom compare plot -->
+      <!-- Custom plot -->
       <div class="bg-gray-900 rounded-2xl p-4 space-y-3">
         <p class="text-sm font-semibold">Custom Plot</p>
         <div class="grid grid-cols-2 gap-3">
@@ -402,17 +387,19 @@
             <select id="cmp-y" class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700"></select>
           </div>
         </div>
-        <button onclick="plotCompareCustom()"
+        <p class="text-xs text-gray-400">Select which users to show:</p>
+        <div id="cmp-custom-pills" class="flex flex-wrap gap-2"></div>
+        <div class="bg-gray-800 rounded-xl p-1 flex gap-1">
+          <button onclick="setChartView('custom','overlay')" id="btn-custom-overlay"
+            class="flex-1 py-1.5 rounded-lg text-xs font-semibold active-view">Overlay</button>
+          <button onclick="setChartView('custom','side')"    id="btn-custom-side"
+            class="flex-1 py-1.5 rounded-lg text-xs font-semibold text-gray-400">Side by Side</button>
+        </div>
+        <button onclick="renderCustomChart()"
           class="w-full py-2.5 rounded-xl bg-gray-700 active:bg-gray-600 font-semibold text-sm">
           Plot
         </button>
-        <div id="cmp-custom-overlay" class="hidden" style="height:220px"></div>
-        <div id="cmp-custom-side" class="hidden space-y-1">
-          <p id="cmp-row-label-a-custom" class="text-xs font-semibold" style="color:#3b82f6">Me</p>
-          <div id="cmp-custom-a" style="height:175px"></div>
-          <p id="cmp-row-label-b-custom" class="text-xs font-semibold mt-2" style="color:#f97316">Friend</p>
-          <div id="cmp-custom-b" style="height:175px"></div>
-        </div>
+        <div id="cmp-custom-area"></div>
       </div>
 
     </div>
@@ -958,31 +945,133 @@ function restoreCharts() {
 }
 
 // ── Compare tab
-let cmpMetricsA = null;
-let cmpMetricsB = null;
-let cmpView     = 'overlay';
-let _compareInit = false;
-const CMP_A = '#3b82f6';   // blue  — user A
-const CMP_B = '#f97316';   // orange — user B
+const USER_COLORS = [
+  '#3b82f6','#f97316','#10b981','#a855f7',
+  '#ef4444','#f59e0b','#06b6d4','#ec4899',
+];
+let importedUsers     = [];   // [{id, name, color, metrics}]
+let selectedForForce  = new Set();
+let selectedForCustom = new Set();
+let chartViews        = { force: 'overlay', custom: 'overlay' };
+let pendingImportData = null;
 
-async function initCompare() {
-  if (_compareInit) return;
-  _compareInit = true;
-  const res  = await fetch('/api/workouts');
-  const list = await res.json();
-  const sel  = $('cmp-my-id');
-  list.forEach(w => {
-    const opt = document.createElement('option');
-    opt.value       = w.id;
-    opt.textContent = `${fmtDate(w.date)} — ${w.stroke_count} strokes`;
-    sel.appendChild(opt);
+function hexToRgba(hex, a) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+// ── Modal
+function openImportModal() {
+  if (importedUsers.length >= 8) { alert('Maximum 8 users reached.'); return; }
+  pendingImportData = null;
+  $('import-name').value = '';
+  $('drop-filename').classList.add('hidden');
+  $('drop-zone-inner').classList.remove('hidden');
+  $('import-modal').classList.remove('hidden');
+}
+function closeImportModal() {
+  $('import-modal').classList.add('hidden');
+  pendingImportData = null;
+}
+function handleFileDrop(e) {
+  e.preventDefault();
+  $('drop-zone').classList.remove('border-blue-500','bg-blue-950');
+  const file = e.dataTransfer.files[0];
+  if (file) readImportFile(file);
+}
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) readImportFile(file);
+}
+function readImportFile(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!data.metrics) { alert('Not a valid SmartC2 workout file.'); return; }
+      pendingImportData = data;
+      $('drop-zone-inner').classList.add('hidden');
+      $('drop-filename').classList.remove('hidden');
+      $('drop-filename').textContent = `✓ ${file.name}`;
+    } catch { alert('Could not read file.'); }
+  };
+  reader.readAsText(file);
+}
+function confirmImport() {
+  if (!pendingImportData) { alert('Please select a file.'); return; }
+  const name  = $('import-name').value.trim() || `User ${importedUsers.length + 1}`;
+  const color = USER_COLORS[importedUsers.length % USER_COLORS.length];
+  const id    = `u_${Date.now()}`;
+  importedUsers.push({ id, name, color, metrics: pendingImportData.metrics });
+  selectedForForce.add(id);
+  selectedForCustom.add(id);
+  closeImportModal();
+  refreshCompareUI();
+}
+
+// ── User management
+function removeUser(id) {
+  importedUsers     = importedUsers.filter(u => u.id !== id);
+  selectedForForce.delete(id);
+  selectedForCustom.delete(id);
+  refreshCompareUI();
+}
+
+function refreshCompareUI() {
+  // User list
+  const list = $('cmp-user-list');
+  list.innerHTML = '';
+  importedUsers.forEach(u => {
+    const row = document.createElement('div');
+    row.className = 'flex items-center gap-3 bg-gray-900 rounded-xl px-4 py-3';
+    row.innerHTML =
+      `<div class="w-3 h-3 rounded-full flex-shrink-0" style="background:${u.color}"></div>` +
+      `<span class="text-sm font-medium flex-1">${u.name}</span>` +
+      `<button onclick="removeUser('${u.id}')" class="text-gray-500 hover:text-red-400 text-sm leading-none">✕</button>`;
+    list.appendChild(row);
   });
-  // Populate axis selects
+
+  $('cmp-empty').classList.toggle('hidden', importedUsers.length > 0);
+  const showCharts = importedUsers.length >= 2;
+  $('cmp-charts').classList.toggle('hidden', !showCharts);
+
+  if (showCharts) {
+    renderPills('cmp-force-pills',  selectedForForce,  'force');
+    renderPills('cmp-custom-pills', selectedForCustom, 'custom');
+    populateCmpAxes();
+    renderForceChart();
+  }
+}
+
+function renderPills(containerId, selectedSet, chartKey) {
+  const el = $(containerId);
+  el.innerHTML = '';
+  importedUsers.forEach(u => {
+    const on  = selectedSet.has(u.id);
+    const btn = document.createElement('button');
+    btn.className     = 'px-3 py-1 rounded-full text-xs font-semibold border-2 transition';
+    btn.style.borderColor = u.color;
+    btn.style.color       = on ? 'white' : u.color;
+    btn.style.background  = on ? u.color : 'transparent';
+    btn.textContent       = u.name;
+    btn.onclick = () => {
+      selectedSet.has(u.id) ? selectedSet.delete(u.id) : selectedSet.add(u.id);
+      renderPills(containerId, selectedSet, chartKey);
+      if (chartKey === 'force') renderForceChart();
+    };
+    el.appendChild(btn);
+  });
+}
+
+function populateCmpAxes() {
   ['cmp-x','cmp-y'].forEach((id, i) => {
     const s = $(id);
+    if (s.children.length) return;
     METRIC_DEFS.forEach(m => {
       const o = document.createElement('option');
-      o.value       = m.key;
+      o.value = m.key;
       o.textContent = m.unit ? `${m.label} (${m.unit})` : m.label;
       s.appendChild(o);
     });
@@ -990,122 +1079,162 @@ async function initCompare() {
   });
 }
 
-async function loadMyCompareWorkout() {
-  const id = $('cmp-my-id').value;
-  if (!id) { cmpMetricsA = null; return; }
-  const res  = await fetch(`/api/workouts/${id}`);
-  const data = await res.json();
-  cmpMetricsA = data.metrics || null;
+// ── View toggles
+function setChartView(chartKey, view) {
+  chartViews[chartKey] = view;
+  [`btn-${chartKey}-overlay`, `btn-${chartKey}-side`].forEach(id => {
+    const isActive = id.includes(view);
+    $(id).classList.toggle('active-view', isActive);
+    $(id).classList.toggle('text-gray-400', !isActive);
+  });
+  if (chartKey === 'force') renderForceChart();
 }
 
-function loadCompareFile(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    try {
-      const data  = JSON.parse(ev.target.result);
-      cmpMetricsB = data.metrics || null;
-      $('cmp-file-label').textContent = `✓ ${file.name}`;
-    } catch { alert('Could not read file — must be a SmartC2 workout JSON.'); }
-  };
-  reader.readAsText(file);
-}
+// ── Core chart renderer (handles both charts + both views)
+function buildChartArea(areaId, users, getX, getY, xLabel, yLabel, isForce) {
+  const area = $(areaId);
+  area.innerHTML = '';
+  if (!users.length) return;
 
-function setCmpView(v) {
-  cmpView = v;
-  $('btn-cmp-overlay').classList.toggle('active-view', v === 'overlay');
-  $('btn-cmp-overlay').classList.toggle('text-gray-400', v !== 'overlay');
-  $('btn-cmp-side').classList.toggle('active-view', v === 'side');
-  $('btn-cmp-side').classList.toggle('text-gray-400', v !== 'side');
-}
+  const chartKey = areaId.includes('force') ? 'force' : 'custom';
+  const overlay  = chartViews[chartKey] === 'overlay';
 
-function runCompare() {
-  if (!cmpMetricsA) { alert('Select your workout first.'); return; }
-  if (!cmpMetricsB) { alert('Upload a comparison workout JSON first.'); return; }
-  const la = $('cmp-label-a').value || 'Me';
-  const lb = $('cmp-label-b').value || 'Friend';
-  $('cmp-row-label-a-force').textContent  = la;
-  $('cmp-row-label-b-force').textContent  = lb;
-  $('cmp-row-label-a-custom').textContent = la;
-  $('cmp-row-label-b-custom').textContent = lb;
-  show($('cmp-results'));
-  plotCompareForce(la, lb);
-}
-
-function _cmpTogglePanels(overlayId, sideId) {
-  const isOverlay = cmpView === 'overlay';
-  $(overlayId).classList.toggle('hidden', !isOverlay);
-  $(sideId).classList.toggle('hidden', isOverlay);
-}
-
-function plotCompareForce(la, lb) {
-  _cmpTogglePanels('cmp-force-overlay', 'cmp-force-side');
-  const base = {
+  const baseLayout = {
     ...PL,
-    xaxis: {...PL.xaxis, title:'Time (s)'},
-    yaxis: {...PL.yaxis, title:'Force (N)', rangemode:'tozero'},
-    legend: {orientation:'h', y:1.15, font:{color:'#9ca3af',size:10}},
+    xaxis:  { ...PL.xaxis, title: xLabel },
+    yaxis:  { ...PL.yaxis, title: yLabel, rangemode: 'tozero' },
+    legend: { orientation:'h', y:1.15, font:{color:'#9ca3af',size:10} },
+    margin: { ...PL.margin, t: 20 },
   };
-  if (cmpView === 'overlay') {
-    Plotly.newPlot('cmp-force-overlay', [
-      {x:cmpMetricsA.time_axis, y:cmpMetricsA.average_force_curve, name:la,
-       type:'scatter', mode:'lines', line:{color:CMP_A, width:2.5}},
-      {x:cmpMetricsB.time_axis, y:cmpMetricsB.average_force_curve, name:lb,
-       type:'scatter', mode:'lines', line:{color:CMP_B, width:2.5}},
-    ], base, PC);
+
+  if (overlay) {
+    // Coloured name tags above chart
+    const tags = document.createElement('div');
+    tags.className = 'flex flex-wrap gap-x-3 gap-y-1 mb-2';
+    users.forEach(u => {
+      const s = document.createElement('span');
+      s.className   = 'text-xs font-bold';
+      s.style.color = u.color;
+      s.textContent = u.name;
+      tags.appendChild(s);
+    });
+    area.appendChild(tags);
+
+    const div = document.createElement('div');
+    div.style.height = '230px';
+    area.appendChild(div);
+
+    Plotly.newPlot(div, users.map(u => ({
+      x: getX(u), y: getY(u), name: u.name,
+      type: 'scatter',
+      mode: isForce ? 'lines' : 'lines+markers',
+      line:   { color: u.color, width: 2.5 },
+      marker: isForce ? undefined : { size: 5, color: u.color },
+      fill:      isForce ? 'tozeroy'              : undefined,
+      fillcolor: isForce ? hexToRgba(u.color,0.08) : undefined,
+    })), baseLayout, PC);
+
   } else {
-    const rowLayout = {...base, legend:undefined, margin:{...PL.margin, t:4}};
-    Plotly.newPlot('cmp-force-a', [
-      {x:cmpMetricsA.time_axis, y:cmpMetricsA.average_force_curve,
-       type:'scatter', mode:'lines', line:{color:CMP_A,width:2.5},
-       fill:'tozeroy', fillcolor:'rgba(59,130,246,0.1)'}], rowLayout, PC);
-    Plotly.newPlot('cmp-force-b', [
-      {x:cmpMetricsB.time_axis, y:cmpMetricsB.average_force_curve,
-       type:'scatter', mode:'lines', line:{color:CMP_B,width:2.5},
-       fill:'tozeroy', fillcolor:'rgba(249,115,22,0.1)'}], rowLayout, PC);
+    // Side-by-side: one row per user, name top-left in user colour
+    users.forEach(u => {
+      const wrap = document.createElement('div');
+      const lbl  = document.createElement('p');
+      lbl.className   = 'text-xs font-bold mb-0.5';
+      lbl.style.color = u.color;
+      lbl.textContent = u.name;
+      wrap.appendChild(lbl);
+
+      const div = document.createElement('div');
+      div.style.height = '155px';
+      wrap.appendChild(div);
+      area.appendChild(wrap);
+
+      Plotly.newPlot(div, [{
+        x: getX(u), y: getY(u),
+        type: 'scatter',
+        mode: isForce ? 'lines' : 'lines+markers',
+        line:       { color: u.color, width: 2.5 },
+        marker:     isForce ? undefined : { size: 5, color: u.color },
+        fill:       isForce ? 'tozeroy'              : undefined,
+        fillcolor:  isForce ? hexToRgba(u.color,0.1) : undefined,
+        showlegend: false,
+      }], { ...baseLayout, legend:undefined, margin:{...PL.margin,t:4} }, PC);
+    });
   }
 }
 
-function plotCompareCustom() {
-  if (!cmpMetricsA || !cmpMetricsB) { alert('Run Compare first.'); return; }
-  const xKey = $('cmp-x').value;
-  const yKey = $('cmp-y').value;
-  const xDef = METRIC_DEFS.find(m => m.key === xKey);
-  const yDef = METRIC_DEFS.find(m => m.key === yKey);
-  const la   = $('cmp-label-a').value || 'Me';
-  const lb   = $('cmp-label-b').value || 'Friend';
-  const xl   = xDef.unit ? `${xDef.label} (${xDef.unit})` : xDef.label;
-  const yl   = yDef.unit ? `${yDef.label} (${yDef.unit})` : yDef.label;
-
-  _cmpTogglePanels('cmp-custom-overlay', 'cmp-custom-side');
-
-  const trA = {x:cmpMetricsA[xKey]||[], y:cmpMetricsA[yKey]||[], name:la,
-    type:'scatter', mode:'lines+markers', line:{color:CMP_A,width:2}, marker:{size:5,color:CMP_A}};
-  const trB = {x:cmpMetricsB[xKey]||[], y:cmpMetricsB[yKey]||[], name:lb,
-    type:'scatter', mode:'lines+markers', line:{color:CMP_B,width:2}, marker:{size:5,color:CMP_B}};
-  const base = {
-    ...PL,
-    xaxis:{...PL.xaxis,title:xl}, yaxis:{...PL.yaxis,title:yl},
-    legend:{orientation:'h',y:1.15,font:{color:'#9ca3af',size:10}},
-  };
-
-  if (cmpView === 'overlay') {
-    Plotly.newPlot('cmp-custom-overlay', [trA, trB], base, PC);
-  } else {
-    const rowLayout = {...base, legend:undefined, margin:{...PL.margin,t:4}};
-    Plotly.newPlot('cmp-custom-a', [{...trA, showlegend:false}], rowLayout, PC);
-    Plotly.newPlot('cmp-custom-b', [{...trB, showlegend:false}], rowLayout, PC);
-  }
+function renderForceChart() {
+  const users = importedUsers.filter(u => selectedForForce.has(u.id));
+  buildChartArea('cmp-force-area', users,
+    u => u.metrics.time_axis,
+    u => u.metrics.average_force_curve,
+    'Time (s)', 'Force (N)', true);
 }
+
+function renderCustomChart() {
+  const xKey  = $('cmp-x').value;
+  const yKey  = $('cmp-y').value;
+  const xDef  = METRIC_DEFS.find(m => m.key === xKey);
+  const yDef  = METRIC_DEFS.find(m => m.key === yKey);
+  const users = importedUsers.filter(u => selectedForCustom.has(u.id));
+  buildChartArea('cmp-custom-area', users,
+    u => u.metrics[xKey] || [],
+    u => u.metrics[yKey] || [],
+    xDef.unit ? `${xDef.label} (${xDef.unit})` : xDef.label,
+    yDef.unit ? `${yDef.label} (${yDef.unit})` : yDef.label,
+    false);
+}
+
+function initCompare() { /* users persist in memory — nothing to reinit */ }
 
 // ── Boot
 connectWS();
 </script>
 
+<!-- ═══ Import Modal ═══ -->
+<div id="import-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-end sm:items-center justify-center p-4">
+  <div class="bg-gray-900 rounded-2xl p-6 w-full max-w-sm space-y-4">
+
+    <div class="flex justify-between items-center">
+      <p class="font-semibold">Import Workout</p>
+      <button onclick="closeImportModal()" class="text-gray-400 hover:text-white text-xl leading-none">✕</button>
+    </div>
+
+    <div>
+      <label class="text-xs text-gray-400 block mb-1">Username</label>
+      <input id="import-name" type="text" placeholder="e.g. John"
+        class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700">
+    </div>
+
+    <!-- Drag & drop zone -->
+    <div id="drop-zone"
+      class="border-2 border-dashed border-gray-600 rounded-xl p-8 text-center cursor-pointer transition-colors"
+      ondragover="event.preventDefault(); this.classList.add('border-blue-500','bg-blue-950')"
+      ondragleave="this.classList.remove('border-blue-500','bg-blue-950')"
+      ondrop="handleFileDrop(event)"
+      onclick="$('import-file-input').click()">
+      <div id="drop-zone-inner">
+        <p class="text-3xl mb-2">📂</p>
+        <p class="text-sm text-gray-300 font-medium">Drag &amp; drop workout JSON</p>
+        <p class="text-xs text-gray-500 mt-1">or tap to browse</p>
+      </div>
+      <p id="drop-filename" class="hidden text-sm text-green-400 font-medium py-2"></p>
+      <input type="file" id="import-file-input" class="hidden" accept=".json" onchange="handleFileSelect(event)">
+    </div>
+
+    <div class="flex gap-3">
+      <button onclick="closeImportModal()"
+        class="flex-1 py-3 rounded-xl bg-gray-800 active:bg-gray-700 text-sm font-semibold">Cancel</button>
+      <button onclick="confirmImport()"
+        class="flex-1 py-3 rounded-xl bg-blue-600 active:bg-blue-700 text-sm font-semibold">Import</button>
+    </div>
+  </div>
+</div>
+
 <style>
-  .active-tab { color: #60a5fa; border-bottom: 2px solid #3b82f6; }
-  .tab-btn    { color: #6b7280; }
+  .active-tab  { color: #60a5fa; border-bottom: 2px solid #3b82f6; }
+  .tab-btn     { color: #6b7280; }
+  .active-view { background: #1e40af; color: white; }
 </style>
 </body>
 </html>
