@@ -18,6 +18,7 @@ from metrics import compute
 from training_load import (workout_tss, compute_history,
                            hr_zones_max, hr_zones_karvonen,
                            zone_distribution, max_hr_estimate)
+import prs as pr_module
 
 # ─────────────────────────── paths
 BASE     = Path(__file__).parent
@@ -118,6 +119,43 @@ async def get_workout(wid: str):
     if not path.exists():
         return JSONResponse({"error": "not found"}, status_code=404)
     return JSONResponse(json.loads(path.read_text()))
+
+@app.delete("/api/workouts/{wid}")
+async def delete_workout(wid: str):
+    path = DATA / f"{wid}.json"
+    if not path.exists():
+        return JSONResponse({"error": "not found"}, status_code=404)
+    path.unlink()
+    return JSONResponse({"ok": True})
+
+# ── Personal Records
+@app.get("/api/prs")
+async def get_prs():
+    return JSONResponse(pr_module.load())
+
+class PRUpdate(BaseModel):
+    two_k:     float | None = None
+    five_k:    float | None = None
+    six_k:     float | None = None
+    ten_k:     float | None = None
+    max_watts: int   | None = None
+
+@app.post("/api/prs")
+async def set_prs(body: PRUpdate):
+    prs = pr_module.load()
+    mapping = {"two_k":"2k","five_k":"5k","six_k":"6k","ten_k":"10k","max_watts":"max_watts"}
+    for field, key in mapping.items():
+        val = getattr(body, field)
+        if val is not None:
+            prs[key] = val
+    pr_module.save(prs)
+    return JSONResponse(prs)
+
+@app.post("/api/prs/scan")
+async def scan_all_prs():
+    """Rescan every saved workout and rebuild PRs from scratch."""
+    result = pr_module.scan_all(DATA)
+    return JSONResponse(result)
 
 # ── Settings
 @app.get("/api/settings")
@@ -256,9 +294,16 @@ async def _handle(msg: dict, ws: WebSocket) -> None:
             zones = hr_zones_karvonen(max_hr, s.get("rest_hr", 55))
             hr_zone_dist = zone_distribution(recorder.hr_samples, zones)
 
+        # Scan for new personal records
+        total_dist  = recorder.strokes[-1].distance if recorder.strokes else 0
+        watts_list  = [s.watts for s in recorder.strokes]
+        pr_cands    = pr_module.scan_workout(total_dist, m.get("duration", 0), watts_list)
+        all_prs, new_prs = pr_module.update(pr_cands)
+
         await broadcast({"event": "results", "data": m, "tss": tss,
                          "tss_method": tss_method, "workout_id": wid,
-                         "hr_zone_dist": hr_zone_dist})
+                         "hr_zone_dist": hr_zone_dist,
+                         "prs": all_prs, "new_prs": new_prs})
 
 # ─────────────────────────── entry point
 if __name__ == "__main__":

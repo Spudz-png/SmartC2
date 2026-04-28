@@ -9,20 +9,36 @@
 </head>
 <body class="bg-gray-950 text-white min-h-screen font-sans select-none">
 
+  <!-- Sticky top block: header + PR bar + nav -->
+  <div class="sticky top-0 z-10">
+
   <!-- Header -->
-  <header class="bg-gray-900 border-b border-gray-800 px-4 py-3 flex items-center justify-between sticky top-0 z-10">
+  <header class="bg-gray-900 px-4 py-3 flex items-center justify-between">
     <h1 class="text-base font-bold tracking-wide">C2 Force Curve</h1>
     <span id="status-badge" class="text-xs px-3 py-1 rounded-full bg-gray-700 text-gray-300">Disconnected</span>
   </header>
 
+  <!-- PR Bar -->
+  <div class="bg-gray-900 border-t border-gray-800 px-3 py-1.5 flex items-center gap-3 overflow-x-auto">
+    <span class="text-yellow-400 text-xs font-bold flex-shrink-0">🏆</span>
+    <button onclick="openPRModal()" id="pr-2k"   class="pr-chip flex-shrink-0 text-center"><span class="text-xs text-gray-500 block">2K</span><span class="text-sm font-bold tabular-nums">—</span></button>
+    <button onclick="openPRModal()" id="pr-5k"   class="pr-chip flex-shrink-0 text-center"><span class="text-xs text-gray-500 block">5K</span><span class="text-sm font-bold tabular-nums">—</span></button>
+    <button onclick="openPRModal()" id="pr-6k"   class="pr-chip flex-shrink-0 text-center"><span class="text-xs text-gray-500 block">6K</span><span class="text-sm font-bold tabular-nums">—</span></button>
+    <button onclick="openPRModal()" id="pr-10k"  class="pr-chip flex-shrink-0 text-center"><span class="text-xs text-gray-500 block">10K</span><span class="text-sm font-bold tabular-nums">—</span></button>
+    <button onclick="openPRModal()" id="pr-watts" class="pr-chip flex-shrink-0 text-center"><span class="text-xs text-gray-500 block">Max W</span><span class="text-sm font-bold tabular-nums">—</span></button>
+    <button onclick="openPRModal()" class="ml-auto text-gray-600 hover:text-gray-300 text-xs flex-shrink-0">✏ Edit</button>
+  </div>
+
   <!-- Tab bar -->
-  <nav class="bg-gray-900 border-b border-gray-800 flex sticky top-12 z-10">
+  <nav class="bg-gray-900 border-b border-gray-800 flex">
     <button onclick="showTab('live')"     id="tab-live"     class="flex-1 py-2.5 text-xs font-semibold tab-btn">Live</button>
     <button onclick="showTab('analysis')" id="tab-analysis" class="flex-1 py-2.5 text-xs font-semibold tab-btn">Analysis</button>
     <button onclick="showTab('training')" id="tab-training" class="flex-1 py-2.5 text-xs font-semibold tab-btn">Training</button>
     <button onclick="showTab('compare')"  id="tab-compare"  class="flex-1 py-2.5 text-xs font-semibold tab-btn">Compare</button>
     <button onclick="showTab('history')"  id="tab-history"  class="flex-1 py-2.5 text-xs font-semibold tab-btn">History</button>
   </nav>
+
+  </div><!-- /sticky top -->
 
   <!-- ═══════════════════ LIVE TAB -->
   <div id="page-live" class="p-4 space-y-4 pb-8">
@@ -295,13 +311,6 @@
       </div>
     </div>
 
-    <!-- Explanation -->
-    <div class="bg-gray-900 rounded-2xl p-4 text-xs text-gray-400 space-y-1">
-      <p><span class="text-blue-400 font-medium">Fitness (CTL)</span> — 42-day rolling load. Higher = more base fitness.</p>
-      <p><span class="text-orange-400 font-medium">Fatigue (ATL)</span> — 7-day rolling load. Higher = more accumulated fatigue.</p>
-      <p><span class="font-medium" style="color:#a3e635">Form (TSB)</span> — Fitness minus Fatigue. Positive = fresh, negative = fatigued.</p>
-      <p class="pt-1 text-gray-500">TSS per workout = stress relative to your FTP or threshold HR. Refresh to update after changing settings.</p>
-    </div>
 
     <!-- Load / refresh button -->
     <button onclick="loadTrainingData()"
@@ -369,32 +378,14 @@
         <div id="cmp-force-area"></div>
       </div>
 
-      <!-- Custom plot -->
-      <div class="bg-gray-900 rounded-2xl p-4 space-y-3">
-        <p class="text-sm font-semibold">Custom Plot</p>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="text-xs text-gray-400 block mb-1">X Axis</label>
-            <select id="cmp-x" class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700"></select>
-          </div>
-          <div>
-            <label class="text-xs text-gray-400 block mb-1">Y Axis</label>
-            <select id="cmp-y" class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700"></select>
-          </div>
+      <!-- Custom plots (unlimited) -->
+      <div>
+        <div class="flex justify-between items-center mb-3">
+          <p class="text-xs text-gray-500 uppercase tracking-wider">Custom Plots</p>
+          <button onclick="addCmpCustomChart()"
+            class="text-blue-400 font-bold text-lg leading-none px-2">+</button>
         </div>
-        <p class="text-xs text-gray-400">Select which users to show:</p>
-        <div id="cmp-custom-pills" class="flex flex-wrap gap-2"></div>
-        <div class="bg-gray-800 rounded-xl p-1 flex gap-1">
-          <button onclick="setChartView('custom','overlay')" id="btn-custom-overlay"
-            class="flex-1 py-1.5 rounded-lg text-xs font-semibold active-view">Overlay</button>
-          <button onclick="setChartView('custom','side')"    id="btn-custom-side"
-            class="flex-1 py-1.5 rounded-lg text-xs font-semibold text-gray-400">Side by Side</button>
-        </div>
-        <button onclick="renderCustomChart()"
-          class="w-full py-2.5 rounded-xl bg-gray-700 active:bg-gray-600 font-semibold text-sm">
-          Plot
-        </button>
-        <div id="cmp-custom-area"></div>
+        <div id="cmp-custom-charts" class="space-y-3"></div>
       </div>
 
     </div>
@@ -496,7 +487,12 @@ let recording = false, _clockInterval;
 function startWorkout() {
   send({action:'start'});
   recording = true;
-  ['m-strokes','m-rate','m-watts','m-split','m-peak','m-hr'].forEach(id => $('m-'+id.split('-')[1]).textContent = id === 'm-strokes' ? '0' : '—');
+  $('m-strokes').textContent = '0';
+  $('m-rate').textContent    = '—';
+  $('m-watts').textContent   = '—';
+  $('m-split').textContent   = '—';
+  $('m-peak').textContent    = '—';
+  $('m-hr').textContent      = '—';
   $('m-elapsed').textContent = '0:00';
   $('stroke-log').innerHTML  = '';
   show($('panel-metrics')); show($('panel-log'));
@@ -565,6 +561,12 @@ function handle(msg) {
 
   } else if (event === 'results') {
     renderResults(data, msg.hr_zone_dist || null);
+    if (msg.prs) updatePRBar(msg.prs);
+    if (msg.new_prs && Object.keys(msg.new_prs).length) {
+      const labels = {'2k':'2K','5k':'5K','6k':'6K','10k':'10K','max_watts':'Max Watts'};
+      const names  = Object.keys(msg.new_prs).map(k => labels[k] || k).join(', ');
+      setTimeout(() => alert(`🏆 New PR${Object.keys(msg.new_prs).length > 1 ? 's' : ''}! ${names}`), 500);
+    }
     showTab('analysis');
   }
 }
@@ -587,16 +589,15 @@ function appendStrokeRow(d) {
 function renderResults(m, hrZoneDist = null) {
   currentMetrics = m;
   hide($('no-results')); show($('analysis-content'));
-  populateCustomSelects();
 
   $('r-strokes').textContent     = m.stroke_count;
   $('r-duration').textContent    = fmtTime(m.duration);
-  $('r-watts').textContent       = m.average_watts   ? `${m.average_watts} W`  : '—';
-  $('r-split').textContent       = m.average_split   ? fmtSplit(m.average_split) : '—';
-  $('r-avgpeak').textContent     = `${m.average_peak_force} N`;
-  $('r-consistency').textContent = `${m.consistency_score} / 100`;
-  $('r-hr').textContent          = m.average_hr           ? `${m.average_hr} bpm`           : '—';
-  $('r-ttp').textContent         = `${m.average_time_to_peak.toFixed(1)}%`;
+  $('r-watts').textContent       = m.average_watts        ? `${m.average_watts} W`           : '—';
+  $('r-split').textContent       = m.average_split        ? fmtSplit(m.average_split)        : '—';
+  $('r-avgpeak').textContent     = m.average_peak_force   ? `${m.average_peak_force} N`      : '—';
+  $('r-consistency').textContent = m.consistency_score    ? `${m.consistency_score} / 100`   : '—';
+  $('r-hr').textContent          = m.average_hr           ? `${m.average_hr} bpm`            : '—';
+  $('r-ttp').textContent         = m.average_time_to_peak != null ? `${(+m.average_time_to_peak).toFixed(1)}%` : '—';
   $('r-drive-len').textContent   = m.average_drive_length ? `${m.average_drive_length} m`   : '—';
   $('r-drive-time').textContent  = m.average_drive_time   ? `${m.average_drive_time} s`     : '—';
 
@@ -773,32 +774,70 @@ function plotCustomById(idx) {
 
 // ── History tab
 async function loadHistory() {
-  const res  = await fetch('/api/workouts');
-  const list = await res.json();
-  const el   = $('history-list');
-  el.innerHTML = '';
-  if (!list.length) {
-    el.innerHTML = '<p class="text-gray-500 text-sm text-center py-8">No workouts saved yet.</p>';
-    return;
+  try {
+    const res  = await fetch('/api/workouts');
+    if (!res.ok) throw new Error(`Server error ${res.status}`);
+    const list = await res.json();
+    const el   = $('history-list');
+    el.innerHTML = '';
+    if (!list.length) {
+      el.innerHTML = '<p class="text-gray-500 text-sm text-center py-8">No workouts saved yet.</p>';
+      return;
+    }
+    list.forEach(w => {
+      const row = document.createElement('div');
+      row.className = 'flex items-center gap-2 bg-gray-900 rounded-2xl p-4';
+
+      const info = document.createElement('button');
+      info.className = 'flex-1 text-left active:opacity-70';
+      info.innerHTML =
+        `<div class="flex justify-between">` +
+          `<span class="font-semibold text-sm">${fmtDate(w.date)}</span>` +
+          `<span class="text-xs text-gray-400">${fmtTime(w.duration)}</span>` +
+        `</div>` +
+        `<div class="text-xs text-gray-400 mt-1">${w.stroke_count} strokes` +
+          (w.tss ? ` · TSS ${w.tss}` : '') + `</div>`;
+      info.onclick = () => loadWorkout(w.id);
+
+      const del = document.createElement('button');
+      del.className = 'text-gray-600 hover:text-red-400 text-lg leading-none px-1 flex-shrink-0';
+      del.textContent = '🗑';
+      del.title = 'Delete workout';
+      del.onclick = (e) => { e.stopPropagation(); deleteWorkout(w.id, row); };
+
+      row.appendChild(info);
+      row.appendChild(del);
+      el.appendChild(row);
+    });
+  } catch (err) {
+    console.error('loadHistory:', err);
+    $('history-list').innerHTML = `<p class="text-red-400 text-sm text-center py-4">Failed to load history.</p>`;
   }
-  list.forEach(w => {
-    const card = document.createElement('button');
-    card.className = 'w-full text-left bg-gray-900 rounded-2xl p-4 active:bg-gray-800 transition';
-    card.innerHTML =
-      `<div class="flex justify-between">` +
-        `<span class="font-semibold text-sm">${fmtDate(w.date)}</span>` +
-        `<span class="text-xs text-gray-400">${fmtTime(w.duration)}</span>` +
-      `</div>` +
-      `<div class="text-xs text-gray-400 mt-1">${w.stroke_count} strokes</div>`;
-    card.onclick = () => loadWorkout(w.id);
-    el.appendChild(card);
-  });
+}
+
+async function deleteWorkout(id, rowEl) {
+  if (!confirm('Delete this workout? This cannot be undone.')) return;
+  try {
+    const res = await fetch(`/api/workouts/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`Server error ${res.status}`);
+    rowEl.remove();
+  } catch (err) {
+    alert('Delete failed: ' + err.message);
+  }
 }
 
 async function loadWorkout(id) {
-  const res  = await fetch(`/api/workouts/${id}`);
-  const data = await res.json();
-  if (data.metrics) { renderResults(data.metrics, data.hr_zone_dist || null); showTab('analysis'); }
+  try {
+    const res  = await fetch(`/api/workouts/${id}`);
+    if (!res.ok) throw new Error(`Server error ${res.status}`);
+    const data = await res.json();
+    if (!data.metrics) throw new Error('No metrics in workout file');
+    renderResults(data.metrics, data.hr_zone_dist || null);
+    showTab('analysis');
+  } catch (err) {
+    console.error('loadWorkout:', err);
+    alert('Could not load workout: ' + err.message);
+  }
 }
 
 // ── Training tab
@@ -812,14 +851,17 @@ async function initTraining() {
 }
 
 async function loadSettingsUI() {
-  const res = await fetch('/api/settings');
-  const s   = await res.json();
-  $('s-ftp').value   = s.ftp          || '';
-  $('s-maxhr').value = s.max_hr       || '';
-  $('s-thr').value   = s.threshold_hr || '';
-  $('s-rest').value  = s.rest_hr      || '';
-  $('s-age').value   = s.age          || '';
-  $('s-sex').value   = s.sex          || 'male';
+  try {
+    const res = await fetch('/api/settings');
+    if (!res.ok) throw new Error(`Server error ${res.status}`);
+    const s   = await res.json();
+    $('s-ftp').value   = s.ftp          || '';
+    $('s-maxhr').value = s.max_hr       || '';
+    $('s-thr').value   = s.threshold_hr || '';
+    $('s-rest').value  = s.rest_hr      || '';
+    $('s-age').value   = s.age          || '';
+    $('s-sex').value   = s.sex          || 'male';
+  } catch (err) { console.error('loadSettingsUI:', err); }
 }
 
 function estimateMaxHR() {
@@ -833,25 +875,30 @@ function estimateMaxHR() {
 }
 
 async function saveSettings() {
-  const body = {
-    ftp:          parseInt($('s-ftp').value)   || 0,
-    max_hr:       parseInt($('s-maxhr').value) || 0,
-    threshold_hr: parseInt($('s-thr').value)   || 175,
-    rest_hr:      parseInt($('s-rest').value)  || 55,
-    age:          parseInt($('s-age').value)   || 0,
-    sex:          $('s-sex').value || 'male',
-  };
-  await fetch('/api/settings', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify(body),
-  });
-  show($('settings-saved'));
-  setTimeout(() => hide($('settings-saved')), 3000);
+  try {
+    const body = {
+      ftp:          parseInt($('s-ftp').value)   || 0,
+      max_hr:       parseInt($('s-maxhr').value) || 0,
+      threshold_hr: parseInt($('s-thr').value)   || 175,
+      rest_hr:      parseInt($('s-rest').value)  || 55,
+      age:          parseInt($('s-age').value)   || 0,
+      sex:          $('s-sex').value || 'male',
+    };
+    const res = await fetch('/api/settings', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`Server error ${res.status}`);
+    show($('settings-saved'));
+    setTimeout(() => hide($('settings-saved')), 3000);
+  } catch (err) { alert('Save failed: ' + err.message); }
 }
 
 async function loadZones() {
+  try {
   const res  = await fetch('/api/hr-zones');
+  if (!res.ok) throw new Error(`Server error ${res.status}`);
   const data = await res.json();
   if (data.error) { alert(data.error); return; }
 
@@ -878,10 +925,13 @@ async function loadZones() {
 
   if (showMax) $('zones-max-table').innerHTML = data.zones_max.map(zoneRow).join('');
   if (showHrr) $('zones-hrr-table').innerHTML = data.zones_hrr.map(zoneRow).join('');
+  } catch (err) { console.error('loadZones:', err); alert('Could not load zones: ' + err.message); }
 }
 
 async function loadTrainingData() {
+  try {
   const res  = await fetch('/api/training-load');
+  if (!res.ok) throw new Error(`Server error ${res.status}`);
   const data = await res.json();
 
   if (!data.length) {
@@ -911,12 +961,14 @@ async function loadTrainingData() {
   const tsbs  = data.map(d => d.tsb);
   const tsss  = data.filter(d => d.tss > 0);
 
-  // CTL + ATL chart
+  // CTL + ATL chart — spline for smooth polynomial appearance
   Plotly.newPlot('chart-ctl-atl', [
     { x: dates, y: ctls, name: 'Fitness (CTL)', type: 'scatter', mode: 'lines',
-      line: {color:'#3b82f6', width:2.5} },
+      line: {color:'#3b82f6', width:2.5, shape:'spline', smoothing:1.2},
+      fill: 'tozeroy', fillcolor: 'rgba(59,130,246,0.06)' },
     { x: dates, y: atls, name: 'Fatigue (ATL)', type: 'scatter', mode: 'lines',
-      line: {color:'#f97316', width:2.5} },
+      line: {color:'#f97316', width:2.5, shape:'spline', smoothing:1.2},
+      fill: 'tozeroy', fillcolor: 'rgba(249,115,22,0.06)' },
   ], {
     ...PL,
     legend: {orientation:'h', y:1.15, font:{color:'#9ca3af',size:10}},
@@ -924,32 +976,43 @@ async function loadTrainingData() {
     yaxis:  {...PL.yaxis, title:'Load', rangemode:'tozero'},
   }, PC);
 
-  // TSB chart (bars coloured by sign)
-  Plotly.newPlot('chart-tsb', [{
-    x: dates, y: tsbs,
-    type: 'bar',
-    marker: { color: tsbs.map(v => v >= 0 ? '#a3e635' : '#f87171') },
-    name: 'Form (TSB)',
-  }], {
+  // TSB chart — spline fill, positive/negative colouring
+  const posDates = dates.filter((_,i) => tsbs[i] >= 0);
+  const negDates = dates.filter((_,i) => tsbs[i] <  0);
+  const posTsbs  = tsbs.filter(v => v >= 0);
+  const negTsbs  = tsbs.filter(v => v <  0);
+  Plotly.newPlot('chart-tsb', [
+    { x: posDates, y: posTsbs, name:'Fresh', type:'scatter', mode:'lines',
+      line:{color:'#a3e635', width:2, shape:'spline', smoothing:1.2},
+      fill:'tozeroy', fillcolor:'rgba(163,230,53,0.15)' },
+    { x: negDates, y: negTsbs, name:'Fatigued', type:'scatter', mode:'lines',
+      line:{color:'#f87171', width:2, shape:'spline', smoothing:1.2},
+      fill:'tozeroy', fillcolor:'rgba(248,113,113,0.15)' },
+    { x: dates, y: tsbs, showlegend:false, type:'scatter', mode:'lines',
+      line:{color:'rgba(0,0,0,0)', width:0} },
+  ], {
     ...PL,
-    xaxis: {...PL.xaxis, title:'Date'},
-    yaxis: {...PL.yaxis, title:'TSB'},
-    shapes: [{ type:'line', x0:dates[0], x1:dates[dates.length-1],
-               y0:0, y1:0, line:{color:'#6b7280',width:1} }],
+    legend: {orientation:'h', y:1.15, font:{color:'#9ca3af',size:10}},
+    xaxis:  {...PL.xaxis, title:'Date'},
+    yaxis:  {...PL.yaxis, title:'Form (TSB)'},
+    shapes: [{type:'line', x0:dates[0], x1:dates[dates.length-1],
+              y0:0, y1:0, line:{color:'#4b5563', width:1, dash:'dot'}}],
   }, PC);
 
-  // TSS per workout
-  Plotly.newPlot('chart-tss', [{
-    x: tsss.map(d => d.date),
-    y: tsss.map(d => d.tss),
-    type: 'bar',
-    marker: {color:'#818cf8'},
-    name: 'TSS',
-  }], {
+  // TSS per workout — spline for smooth trend
+  Plotly.newPlot('chart-tss', [
+    { x: tsss.map(d => d.date), y: tsss.map(d => d.tss),
+      type:'scatter', mode:'lines+markers',
+      line:{color:'#818cf8', width:2.5, shape:'spline', smoothing:1},
+      marker:{size:6, color:'#818cf8'},
+      fill:'tozeroy', fillcolor:'rgba(129,140,248,0.12)',
+      name:'TSS' },
+  ], {
     ...PL,
     xaxis: {...PL.xaxis, title:'Date'},
     yaxis: {...PL.yaxis, title:'TSS', rangemode:'tozero'},
   }, PC);
+  } catch (err) { console.error('loadTrainingData:', err); alert('Could not load training data: ' + err.message); }
 }
 
 // ── Close buttons (injected after renderResults)
@@ -1071,9 +1134,11 @@ function refreshCompareUI() {
   $('cmp-charts').classList.toggle('hidden', !showCharts);
 
   if (showCharts) {
-    renderPills('cmp-force-pills',  selectedForForce,  'force');
-    renderPills('cmp-custom-pills', selectedForCustom, 'custom');
-    populateCmpAxes();
+    renderPills('cmp-force-pills', selectedForForce, 'force');
+    // Seed one custom chart if none exist yet
+    if (!$('cmp-custom-charts').children.length) addCmpCustomChart();
+    // Refresh pills on all existing custom charts
+    for (let i = 1; i <= _cmpCustomIdx; i++) { if ($(`ccx-pills-${i}`)) renderCcxPills(i); }
     renderForceChart();
   }
 }
@@ -1098,18 +1163,117 @@ function renderPills(containerId, selectedSet, chartKey) {
   });
 }
 
-function populateCmpAxes() {
-  ['cmp-x','cmp-y'].forEach((id, i) => {
-    const s = $(id);
-    if (s.children.length) return;
+let _cmpCustomIdx = 0;
+
+function populateCmpAxes() { /* legacy stub — unused */ }
+
+function addCmpCustomChart() {
+  _cmpCustomIdx++;
+  const idx = _cmpCustomIdx;
+  const defaults = [
+    ['stroke_indices','peak_forces'],
+    ['stroke_indices','watts_per_stroke'],
+    ['stroke_rates',  'hr_per_stroke'],
+    ['stroke_indices','drive_length_per_stroke'],
+  ];
+  const def = defaults[(idx - 1) % defaults.length];
+
+  const card = document.createElement('div');
+  card.id        = `cmp-cc-${idx}`;
+  card.className = 'bg-gray-900 rounded-2xl p-4 space-y-3';
+  card.innerHTML =
+    `<div class="flex justify-between items-center">
+       <p class="text-sm font-semibold">Custom Plot ${idx}</p>
+       <button onclick="$('cmp-cc-${idx}').classList.add('hidden')"
+         class="text-gray-500 hover:text-white text-base leading-none px-1">✕</button>
+     </div>
+     <div class="grid grid-cols-2 gap-3">
+       <div><label class="text-xs text-gray-400 block mb-1">X Axis</label>
+         <select id="ccx-x-${idx}" class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700"></select>
+       </div>
+       <div><label class="text-xs text-gray-400 block mb-1">Y Axis</label>
+         <select id="ccx-y-${idx}" class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700"></select>
+       </div>
+     </div>
+     <p class="text-xs text-gray-400">Users to show:</p>
+     <div id="ccx-pills-${idx}" class="flex flex-wrap gap-2"></div>
+     <div class="bg-gray-800 rounded-xl p-1 flex gap-1">
+       <button onclick="setCcxView(${idx},'overlay')" id="ccx-btn-overlay-${idx}"
+         class="flex-1 py-1.5 rounded-lg text-xs font-semibold active-view">Overlay</button>
+       <button onclick="setCcxView(${idx},'side')"    id="ccx-btn-side-${idx}"
+         class="flex-1 py-1.5 rounded-lg text-xs font-semibold text-gray-400">Side by Side</button>
+     </div>
+     <button onclick="plotCmpCustom(${idx})"
+       class="w-full py-2.5 rounded-xl bg-gray-700 active:bg-gray-600 font-semibold text-sm">Plot</button>
+     <div id="ccx-area-${idx}"></div>`;
+
+  $('cmp-custom-charts').appendChild(card);
+
+  // Populate axis selects
+  ['x','y'].forEach((axis, ai) => {
+    const sel = $(`ccx-${axis}-${idx}`);
     METRIC_DEFS.forEach(m => {
       const o = document.createElement('option');
       o.value = m.key;
       o.textContent = m.unit ? `${m.label} (${m.unit})` : m.label;
-      s.appendChild(o);
+      sel.appendChild(o);
     });
-    s.value = i === 0 ? 'stroke_indices' : 'peak_forces';
+    sel.value = def[ai];
   });
+
+  // Render pills for this chart (default: all selected)
+  renderCcxPills(idx);
+}
+
+const _ccxViews    = {};   // idx → 'overlay'|'side'
+const _ccxSelected = {};   // idx → Set of user ids
+
+function setCcxView(idx, view) {
+  _ccxViews[idx] = view;
+  $(`ccx-btn-overlay-${idx}`).classList.toggle('active-view', view === 'overlay');
+  $(`ccx-btn-overlay-${idx}`).classList.toggle('text-gray-400', view !== 'overlay');
+  $(`ccx-btn-side-${idx}`).classList.toggle('active-view',   view === 'side');
+  $(`ccx-btn-side-${idx}`).classList.toggle('text-gray-400', view !== 'side');
+}
+
+function renderCcxPills(idx) {
+  if (!_ccxSelected[idx]) _ccxSelected[idx] = new Set(importedUsers.map(u => u.id));
+  const sel = _ccxSelected[idx];
+  const el  = $(`ccx-pills-${idx}`);
+  if (!el) return;
+  el.innerHTML = '';
+  importedUsers.forEach(u => {
+    const on  = sel.has(u.id);
+    const btn = document.createElement('button');
+    btn.className     = 'px-3 py-1 rounded-full text-xs font-semibold border-2 transition';
+    btn.style.borderColor = u.color;
+    btn.style.color       = on ? 'white' : u.color;
+    btn.style.background  = on ? u.color : 'transparent';
+    btn.textContent       = u.name;
+    btn.onclick = () => {
+      sel.has(u.id) ? sel.delete(u.id) : sel.add(u.id);
+      renderCcxPills(idx);
+    };
+    el.appendChild(btn);
+  });
+}
+
+function plotCmpCustom(idx) {
+  const xKey  = $(`ccx-x-${idx}`).value;
+  const yKey  = $(`ccx-y-${idx}`).value;
+  const xDef  = METRIC_DEFS.find(m => m.key === xKey);
+  const yDef  = METRIC_DEFS.find(m => m.key === yKey);
+  const view  = _ccxViews[idx] || 'overlay';
+  const sel   = _ccxSelected[idx] || new Set(importedUsers.map(u => u.id));
+  const users = importedUsers.filter(u => sel.has(u.id));
+  const xl    = xDef.unit ? `${xDef.label} (${xDef.unit})` : xDef.label;
+  const yl    = yDef.unit ? `${yDef.label} (${yDef.unit})` : yDef.label;
+  // Temporarily set chartViews.custom to this card's view for buildChartArea
+  chartViews.custom = view;
+  buildChartArea(`ccx-area-${idx}`, users,
+    u => u.metrics[xKey] || [],
+    u => u.metrics[yKey] || [],
+    xl, yl, false);
 }
 
 // ── View toggles
@@ -1206,10 +1370,10 @@ function buildChartArea(areaId, users, getX, getY, xLabel, yLabel, isForce) {
     });
   }
 
-  // Defer Plotly calls to next frame — lets browser compute layout first (fixes width=0 bug)
-  requestAnimationFrame(() => {
+  // Double rAF: first frame shows the container, second frame Plotly can measure it
+  requestAnimationFrame(() => requestAnimationFrame(() => {
     jobs.forEach(({ id, traces, layout }) => Plotly.newPlot(id, traces, layout, PC));
-  });
+  }));
 }
 
 function renderForceChart() {
@@ -1220,25 +1384,137 @@ function renderForceChart() {
     'Time (s)', 'Force (N)', true);
 }
 
-function renderCustomChart() {
-  const xKey  = $('cmp-x').value;
-  const yKey  = $('cmp-y').value;
-  const xDef  = METRIC_DEFS.find(m => m.key === xKey);
-  const yDef  = METRIC_DEFS.find(m => m.key === yKey);
-  const users = importedUsers.filter(u => selectedForCustom.has(u.id));
-  buildChartArea('cmp-custom-area', users,
-    u => u.metrics[xKey] || [],
-    u => u.metrics[yKey] || [],
-    xDef.unit ? `${xDef.label} (${xDef.unit})` : xDef.label,
-    yDef.unit ? `${yDef.label} (${yDef.unit})` : yDef.label,
-    false);
-}
 
 function initCompare() { /* users persist in memory — nothing to reinit */ }
 
+// ── Personal Records
+function fmtPRTime(secs) {
+  if (!secs && secs !== 0) return '—';
+  const m = Math.floor(secs / 60);
+  const s = (secs % 60).toFixed(1).padStart(4, '0');
+  return `${m}:${s}`;
+}
+
+function parsePRTime(str) {
+  if (!str || !str.trim()) return null;
+  const parts = str.trim().split(':');
+  if (parts.length !== 2) return null;
+  const mins = parseInt(parts[0]);
+  const secs = parseFloat(parts[1]);
+  if (isNaN(mins) || isNaN(secs)) return null;
+  return mins * 60 + secs;
+}
+
+function updatePRBar(prs) {
+  if (!prs) return;
+  const chip = (id, val, fmt) => {
+    const el = $(id);
+    if (!el) return;
+    el.querySelector('span:last-child').textContent = val != null ? fmt(val) : '—';
+    el.classList.toggle('text-yellow-400', val != null);
+  };
+  chip('pr-2k',    prs['2k'],        fmtPRTime);
+  chip('pr-5k',    prs['5k'],        fmtPRTime);
+  chip('pr-6k',    prs['6k'],        fmtPRTime);
+  chip('pr-10k',   prs['10k'],       fmtPRTime);
+  chip('pr-watts', prs['max_watts'], v => `${v}W`);
+}
+
+function openPRModal() {
+  fetch('/api/prs').then(r => r.json()).then(prs => {
+    $('pre-2k').value    = prs['2k']        ? fmtPRTime(prs['2k'])    : '';
+    $('pre-5k').value    = prs['5k']        ? fmtPRTime(prs['5k'])    : '';
+    $('pre-6k').value    = prs['6k']        ? fmtPRTime(prs['6k'])    : '';
+    $('pre-10k').value   = prs['10k']       ? fmtPRTime(prs['10k'])   : '';
+    $('pre-watts').value = prs['max_watts'] ?? '';
+    $('pr-modal').classList.remove('hidden');
+  });
+}
+function closePRModal() { $('pr-modal').classList.add('hidden'); }
+
+async function savePRs() {
+  const body = {
+    two_k:     parsePRTime($('pre-2k').value),
+    five_k:    parsePRTime($('pre-5k').value),
+    six_k:     parsePRTime($('pre-6k').value),
+    ten_k:     parsePRTime($('pre-10k').value),
+    max_watts: parseInt($('pre-watts').value) || null,
+  };
+  try {
+    const res = await fetch('/api/prs', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body),
+    });
+    const prs = await res.json();
+    updatePRBar(prs);
+    closePRModal();
+  } catch (err) { alert('Save failed: ' + err.message); }
+}
+
+async function scanAllForPRs() {
+  const btn = event.target;
+  btn.textContent = '⏳ Scanning…';
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/prs/scan', { method: 'POST' });
+    const prs = await res.json();
+    updatePRBar(prs);
+    $('pre-2k').value    = prs['2k']        ? fmtPRTime(prs['2k'])    : '';
+    $('pre-5k').value    = prs['5k']        ? fmtPRTime(prs['5k'])    : '';
+    $('pre-6k').value    = prs['6k']        ? fmtPRTime(prs['6k'])    : '';
+    $('pre-10k').value   = prs['10k']       ? fmtPRTime(prs['10k'])   : '';
+    $('pre-watts').value = prs['max_watts'] ?? '';
+    btn.textContent = '✓ Done';
+  } catch (err) {
+    btn.textContent = '🔍 Scan All Saved Workouts for PRs';
+    alert('Scan failed: ' + err.message);
+  } finally { btn.disabled = false; }
+}
+
+async function loadInitialPRs() {
+  try {
+    const res = await fetch('/api/prs');
+    if (res.ok) updatePRBar(await res.json());
+  } catch { /* silent */ }
+}
+
 // ── Boot
 connectWS();
+loadInitialPRs();
 </script>
+
+<!-- ═══ PR Edit Modal ═══ -->
+<div id="pr-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-end sm:items-center justify-center p-4">
+  <div class="bg-gray-900 rounded-2xl p-6 w-full max-w-sm space-y-4">
+    <div class="flex justify-between items-center">
+      <p class="font-semibold">Personal Records</p>
+      <button onclick="closePRModal()" class="text-gray-400 text-xl leading-none">✕</button>
+    </div>
+    <p class="text-xs text-gray-400">Enter times as <span class="font-mono bg-gray-800 px-1 rounded">m:ss</span> or <span class="font-mono bg-gray-800 px-1 rounded">mm:ss.t</span>. Leave blank to clear.</p>
+    <div class="space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="text-xs text-gray-400 block mb-1">2K Time</label>
+          <input id="pre-2k"    type="text" placeholder="7:42.0" class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700 font-mono"></div>
+        <div><label class="text-xs text-gray-400 block mb-1">5K Time</label>
+          <input id="pre-5k"   type="text" placeholder="21:30.0" class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700 font-mono"></div>
+        <div><label class="text-xs text-gray-400 block mb-1">6K Time</label>
+          <input id="pre-6k"   type="text" placeholder="26:00.0" class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700 font-mono"></div>
+        <div><label class="text-xs text-gray-400 block mb-1">10K Time</label>
+          <input id="pre-10k"  type="text" placeholder="46:00.0" class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700 font-mono"></div>
+      </div>
+      <div><label class="text-xs text-gray-400 block mb-1">Max Watts</label>
+        <input id="pre-watts" type="number" min="0" max="3000" placeholder="285" class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700"></div>
+    </div>
+    <button onclick="scanAllForPRs()"
+      class="w-full py-2 rounded-xl bg-gray-700 active:bg-gray-600 text-sm text-gray-300">
+      🔍 Scan All Saved Workouts for PRs
+    </button>
+    <div class="flex gap-3">
+      <button onclick="closePRModal()" class="flex-1 py-3 rounded-xl bg-gray-800 text-sm font-semibold">Cancel</button>
+      <button onclick="savePRs()"      class="flex-1 py-3 rounded-xl bg-blue-600 active:bg-blue-700 text-sm font-semibold">Save</button>
+    </div>
+  </div>
+</div>
 
 <!-- ═══ Import Modal ═══ -->
 <div id="import-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-end sm:items-center justify-center p-4">
@@ -1284,6 +1560,8 @@ connectWS();
   .active-tab  { color: #60a5fa; border-bottom: 2px solid #3b82f6; }
   .tab-btn     { color: #6b7280; }
   .active-view { background: #1e40af; color: white; }
+  .pr-chip     { min-width: 48px; padding: 2px 6px; border-radius: 8px; }
+  .pr-chip:active { background: rgba(255,255,255,0.05); }
 </style>
 </body>
 </html>
