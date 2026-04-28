@@ -178,25 +178,14 @@
         <div id="chart-zone-dist" style="height:200px"></div>
       </div>
 
-      <!-- ── Custom Graph Builder ── -->
-      <div class="bg-gray-900 rounded-2xl p-4 space-y-3">
-        <p class="text-sm font-semibold">Custom Graph</p>
-        <p class="text-xs text-gray-400">Pick any two metrics to plot against each other.</p>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="text-xs text-gray-400 block mb-1">X Axis</label>
-            <select id="custom-x" class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700"></select>
-          </div>
-          <div>
-            <label class="text-xs text-gray-400 block mb-1">Y Axis</label>
-            <select id="custom-y" class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700"></select>
-          </div>
+      <!-- ── Custom Graphs ── -->
+      <div>
+        <div class="flex justify-between items-center mb-3">
+          <p class="text-xs text-gray-500 uppercase tracking-wider">Custom Graphs</p>
+          <button onclick="addCustomChart()"
+            class="text-blue-400 font-bold text-lg leading-none px-2">+</button>
         </div>
-        <button onclick="plotCustom()"
-          class="w-full py-2.5 rounded-xl bg-blue-600 active:bg-blue-700 font-semibold text-sm transition">
-          Plot
-        </button>
-        <div id="chart-custom" style="height:220px" class="hidden"></div>
+        <div id="custom-charts-container" class="space-y-3"></div>
       </div>
 
     </div>
@@ -247,14 +236,20 @@
         class="w-full py-2 rounded-xl bg-gray-700 active:bg-gray-600 text-sm text-gray-300">
         Estimate Max HR from Age (Tanaka / Gulati)
       </button>
-      <div class="grid grid-cols-2 gap-3">
-        <button onclick="saveSettings()"
-          class="py-2.5 rounded-xl bg-blue-600 active:bg-blue-700 font-semibold text-sm transition">
-          Save Settings
-        </button>
+      <button onclick="saveSettings()"
+        class="w-full py-2.5 rounded-xl bg-blue-600 active:bg-blue-700 font-semibold text-sm transition">
+        Save Settings
+      </button>
+      <div class="flex gap-2 items-center">
+        <select id="zone-method-select"
+          class="flex-1 bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700">
+          <option value="max">% of Max HR</option>
+          <option value="hrr">Karvonen (HRR)</option>
+          <option value="both">Both</option>
+        </select>
         <button onclick="loadZones()"
-          class="py-2.5 rounded-xl bg-gray-700 active:bg-gray-600 font-semibold text-sm">
-          Show HR Zones
+          class="px-4 py-2 rounded-xl bg-gray-700 active:bg-gray-600 font-semibold text-sm">
+          Show Zones
         </button>
       </div>
       <p id="settings-saved" class="hidden text-xs text-green-400 text-center">Saved.</p>
@@ -267,7 +262,7 @@
         <span id="zones-max-hr" class="text-xs text-gray-400"></span>
       </div>
       <!-- % Max HR zones -->
-      <div>
+      <div id="zones-max-section">
         <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">% of Max HR</p>
         <div id="zones-max-table" class="space-y-1.5"></div>
       </div>
@@ -668,6 +663,11 @@ function renderResults(m, hrZoneDist = null) {
     yaxis: {...PL.yaxis, title:'Time (s)', rangemode:'tozero'},
   }, PC);
 
+  // Reset and seed one custom chart
+  _customChartIdx = 0;
+  $('custom-charts-container').innerHTML = '';
+  addCustomChart();
+
   // Close buttons on all chart cards
   addCloseButtons();
 
@@ -699,40 +699,71 @@ function renderResults(m, hrZoneDist = null) {
   }
 }
 
-// ── Custom graph builder
-function populateCustomSelects() {
-  ['custom-x','custom-y'].forEach((id, i) => {
-    const sel = $(id);
-    sel.innerHTML = '';
+// ── Custom graph builder (multi-chart)
+let _customChartIdx = 0;
+const _customDefaults = [
+  ['stroke_rates', 'hr_per_stroke'],
+  ['stroke_indices', 'peak_forces'],
+  ['stroke_indices', 'watts_per_stroke'],
+  ['stroke_indices', 'split_per_stroke'],
+];
+
+function addCustomChart() {
+  if (!currentMetrics) return;
+  const idx  = ++_customChartIdx;
+  const def  = _customDefaults[(idx - 1) % _customDefaults.length];
+
+  const card = document.createElement('div');
+  card.id        = `cx-card-${idx}`;
+  card.className = 'bg-gray-900 rounded-2xl p-4 space-y-3';
+  card.innerHTML =
+    `<div class="flex justify-between items-center">
+       <p class="text-sm font-semibold">Custom Chart ${idx}</p>
+       <button onclick="$('cx-card-${idx}').classList.add('hidden')"
+         class="text-gray-500 hover:text-white text-base leading-none px-1">✕</button>
+     </div>
+     <div class="grid grid-cols-2 gap-3">
+       <div>
+         <label class="text-xs text-gray-400 block mb-1">X Axis</label>
+         <select id="cx-x-${idx}" class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700"></select>
+       </div>
+       <div>
+         <label class="text-xs text-gray-400 block mb-1">Y Axis</label>
+         <select id="cx-y-${idx}" class="w-full bg-gray-800 text-white text-sm rounded-xl px-3 py-2 border border-gray-700"></select>
+       </div>
+     </div>
+     <button onclick="plotCustomById(${idx})"
+       class="w-full py-2.5 rounded-xl bg-blue-600 active:bg-blue-700 font-semibold text-sm">Plot</button>
+     <div id="cx-chart-${idx}" class="hidden" style="height:220px"></div>`;
+
+  $('custom-charts-container').appendChild(card);
+
+  ['x','y'].forEach((axis, i) => {
+    const sel = $(`cx-${axis}-${idx}`);
     METRIC_DEFS.forEach(m => {
-      const opt = document.createElement('option');
-      opt.value = m.key;
-      opt.textContent = m.unit ? `${m.label} (${m.unit})` : m.label;
-      sel.appendChild(opt);
+      const o = document.createElement('option');
+      o.value       = m.key;
+      o.textContent = m.unit ? `${m.label} (${m.unit})` : m.label;
+      sel.appendChild(o);
     });
-    // sensible defaults: X = Stroke Rate, Y = HR
-    if (id === 'custom-x') sel.value = 'stroke_rates';
-    if (id === 'custom-y') sel.value = 'hr_per_stroke';
+    sel.value = def[i];
   });
 }
 
-function plotCustom() {
+function plotCustomById(idx) {
   if (!currentMetrics) return;
-  const xKey = $('custom-x').value;
-  const yKey = $('custom-y').value;
+  const xKey = $(`cx-x-${idx}`).value;
+  const yKey = $(`cx-y-${idx}`).value;
   const xDef = METRIC_DEFS.find(m => m.key === xKey);
   const yDef = METRIC_DEFS.find(m => m.key === yKey);
-  const xData = currentMetrics[xKey] || [];
-  const yData = currentMetrics[yKey] || [];
-
-  show($('chart-custom'));
-  Plotly.newPlot('chart-custom', [{
-    x: xData, y: yData,
+  const chartDiv = $(`cx-chart-${idx}`);
+  chartDiv.classList.remove('hidden');
+  Plotly.newPlot(`cx-chart-${idx}`, [{
+    x: currentMetrics[xKey] || [],
+    y: currentMetrics[yKey] || [],
     type: 'scatter', mode: 'markers+lines',
-    marker: { size: 7, color: '#60a5fa' },
+    marker: { size: 6, color: '#60a5fa' },
     line:   { color: '#60a5fa', width: 1.5 },
-    text: xData.map((_, i) => `Stroke #${i+1}`),
-    hovertemplate: `%{text}<br>${xDef.label}: %{x}<br>${yDef.label}: %{y}<extra></extra>`,
   }], {
     ...PL,
     xaxis: { ...PL.xaxis, title: xDef.unit ? `${xDef.label} (${xDef.unit})` : xDef.label },
@@ -824,27 +855,29 @@ async function loadZones() {
   const data = await res.json();
   if (data.error) { alert(data.error); return; }
 
+  const method = $('zone-method-select').value;  // 'max' | 'hrr' | 'both'
   show($('panel-zones'));
-  $('zones-max-hr').textContent = `Max HR: ${data.max_hr} bpm`;
+  $('zones-max-hr').textContent =
+    `Max HR: ${data.max_hr} bpm  ·  Rest HR: ${data.rest_hr} bpm`;
 
   function zoneRow(z) {
     return `<div class="flex items-center gap-2 text-xs">
       <div class="w-2 h-2 rounded-full flex-shrink-0" style="background:${z.color}"></div>
       <span class="w-16 font-medium">${z.zone}</span>
-      <span class="text-gray-400 w-24">${z.label}</span>
+      <span class="text-gray-400 w-20">${z.label}</span>
       <span class="tabular-nums">${z.min_hr}–${z.max_hr} bpm</span>
       <span class="text-gray-500 ml-auto">${z.min_pct}–${z.max_pct}%</span>
     </div>`;
   }
 
-  $('zones-max-table').innerHTML = data.zones_max.map(zoneRow).join('');
+  const showMax = method === 'max' || method === 'both';
+  const showHrr = (method === 'hrr' || method === 'both') && data.zones_hrr;
 
-  if (data.zones_hrr) {
-    show($('zones-hrr-section'));
-    $('zones-hrr-table').innerHTML = data.zones_hrr.map(zoneRow).join('');
-  } else {
-    hide($('zones-hrr-section'));
-  }
+  $('zones-max-section').classList.toggle('hidden', !showMax);
+  $('zones-hrr-section').classList.toggle('hidden', !showHrr);
+
+  if (showMax) $('zones-max-table').innerHTML = data.zones_max.map(zoneRow).join('');
+  if (showHrr) $('zones-hrr-table').innerHTML = data.zones_hrr.map(zoneRow).join('');
 }
 
 async function loadTrainingData() {
@@ -1091,6 +1124,8 @@ function setChartView(chartKey, view) {
 }
 
 // ── Core chart renderer (handles both charts + both views)
+let _cmpPlotSeq = 0;
+
 function buildChartArea(areaId, users, getX, getY, xLabel, yLabel, isForce) {
   const area = $(areaId);
   area.innerHTML = '';
@@ -1098,6 +1133,7 @@ function buildChartArea(areaId, users, getX, getY, xLabel, yLabel, isForce) {
 
   const chartKey = areaId.includes('force') ? 'force' : 'custom';
   const overlay  = chartViews[chartKey] === 'overlay';
+  const jobs     = [];   // deferred: [{id, traces, layout}]
 
   const baseLayout = {
     ...PL,
@@ -1107,35 +1143,42 @@ function buildChartArea(areaId, users, getX, getY, xLabel, yLabel, isForce) {
     margin: { ...PL.margin, t: 20 },
   };
 
+  function mkDiv(height) {
+    const d  = document.createElement('div');
+    d.id     = `cmp-pl-${++_cmpPlotSeq}`;
+    d.style.cssText = `height:${height}px;width:100%`;
+    return d;
+  }
+
   if (overlay) {
-    // Coloured name tags above chart
     const tags = document.createElement('div');
     tags.className = 'flex flex-wrap gap-x-3 gap-y-1 mb-2';
     users.forEach(u => {
       const s = document.createElement('span');
-      s.className   = 'text-xs font-bold';
+      s.className = 'text-xs font-bold';
       s.style.color = u.color;
       s.textContent = u.name;
       tags.appendChild(s);
     });
     area.appendChild(tags);
 
-    const div = document.createElement('div');
-    div.style.height = '230px';
+    const div = mkDiv(230);
     area.appendChild(div);
-
-    Plotly.newPlot(div, users.map(u => ({
-      x: getX(u), y: getY(u), name: u.name,
-      type: 'scatter',
-      mode: isForce ? 'lines' : 'lines+markers',
-      line:   { color: u.color, width: 2.5 },
-      marker: isForce ? undefined : { size: 5, color: u.color },
-      fill:      isForce ? 'tozeroy'              : undefined,
-      fillcolor: isForce ? hexToRgba(u.color,0.08) : undefined,
-    })), baseLayout, PC);
+    jobs.push({
+      id: div.id,
+      traces: users.map(u => ({
+        x: getX(u), y: getY(u), name: u.name,
+        type: 'scatter',
+        mode: isForce ? 'lines' : 'lines+markers',
+        line:      { color: u.color, width: 2.5 },
+        marker:    isForce ? undefined : { size: 5, color: u.color },
+        fill:      isForce ? 'tozeroy' : undefined,
+        fillcolor: isForce ? hexToRgba(u.color, 0.08) : undefined,
+      })),
+      layout: baseLayout,
+    });
 
   } else {
-    // Side-by-side: one row per user, name top-left in user colour
     users.forEach(u => {
       const wrap = document.createElement('div');
       const lbl  = document.createElement('p');
@@ -1143,24 +1186,30 @@ function buildChartArea(areaId, users, getX, getY, xLabel, yLabel, isForce) {
       lbl.style.color = u.color;
       lbl.textContent = u.name;
       wrap.appendChild(lbl);
-
-      const div = document.createElement('div');
-      div.style.height = '155px';
+      const div = mkDiv(155);
       wrap.appendChild(div);
       area.appendChild(wrap);
-
-      Plotly.newPlot(div, [{
-        x: getX(u), y: getY(u),
-        type: 'scatter',
-        mode: isForce ? 'lines' : 'lines+markers',
-        line:       { color: u.color, width: 2.5 },
-        marker:     isForce ? undefined : { size: 5, color: u.color },
-        fill:       isForce ? 'tozeroy'              : undefined,
-        fillcolor:  isForce ? hexToRgba(u.color,0.1) : undefined,
-        showlegend: false,
-      }], { ...baseLayout, legend:undefined, margin:{...PL.margin,t:4} }, PC);
+      jobs.push({
+        id: div.id,
+        traces: [{
+          x: getX(u), y: getY(u),
+          type: 'scatter',
+          mode: isForce ? 'lines' : 'lines+markers',
+          line:      { color: u.color, width: 2.5 },
+          marker:    isForce ? undefined : { size: 5, color: u.color },
+          fill:      isForce ? 'tozeroy' : undefined,
+          fillcolor: isForce ? hexToRgba(u.color, 0.1) : undefined,
+          showlegend: false,
+        }],
+        layout: { ...baseLayout, legend: undefined, margin: { ...PL.margin, t: 4 } },
+      });
     });
   }
+
+  // Defer Plotly calls to next frame — lets browser compute layout first (fixes width=0 bug)
+  requestAnimationFrame(() => {
+    jobs.forEach(({ id, traces, layout }) => Plotly.newPlot(id, traces, layout, PC));
+  });
 }
 
 function renderForceChart() {
